@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <title>Products · AI Vendor Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #f0f2f5;
+            --bg-surface: #ffffff;
+            --bg-elevated: #f8f9fa;
+            --bg-card: #ffffff;
+            --border: #e5e7eb;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted: #6b7280;
+            --copy-bg: #f3f4f6;
+            --copy-hover: #e5e7eb;
+            --shadow-lg: 0 24px 48px rgba(0,0,0,0.08);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-xl: 28px;
+            --radius-2xl: 32px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            padding: env(safe-area-inset-top) 20px calc(env(safe-area-inset-bottom) + 20px);
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; min-height: 100dvh;
+        }
+        .page-header {
+            width: 100%; max-width: 400px;
+            margin-bottom: 16px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .page-header a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .page-header a:hover { color: var(--text-primary); }
+        .products-panel {
+            width: 100%; max-width: 400px;
+            background: var(--bg-surface);
+            border-radius: var(--radius-2xl);
+            border: 1px solid var(--border);
+            padding: 28px 20px 24px;
+            box-shadow: var(--shadow-lg);
+        }
+        .result-header {
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .result-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 20px; }
+        .progress-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; }
+        .progress-dots span {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--border);
+            transition: background 0.25s, transform 0.25s;
+        }
+        .progress-dots span.active { background: var(--text-primary); transform: scale(1.2); }
+        .stack-wrapper {
+            position: relative;
+            height: 440px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+        }
+        .stack-container { position: relative; width: 300px; height: 420px; }
+        .product-card {
+            position: absolute;
+            left: 0; top: 0;
+            width: 300px;
+            height: 420px;
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: transform;
+        }
+        .product-card.dragging { transition: none; cursor: grabbing; }
+        .product-card.stack-2 {
+            transform: translate3d(12px, 14px, 0) scale(0.97);
+            z-index: 0;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+        }
+        .product-card.stack-3 {
+            transform: translate3d(24px, 28px, 0) scale(0.94);
+            z-index: -1;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+        .product-card img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+        .card-badge {
+            position: absolute; bottom: 18px; left: 18px;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 24px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-badge .check { color: #34d399; }
+        .card-details { margin-top: 22px; padding: 0 4px; }
+        .card-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.25; }
+        .card-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-top: 6px; }
+        .action-row { display: flex; gap: 12px; margin-top: 22px; }
+        .action-row button { flex: 1; margin-top: 0; }
+        button {
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            border: none;
+            font-weight: 600; font-size: 1rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+        button:active { transform: scale(0.98); }
+        .btn-copy {
+            background: var(--copy-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .btn-copy:hover { background: var(--copy-hover); }
+        .wa-btn {
+            background: linear-gradient(135deg, #25D366 0%, #20bd5a 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.3);
+        }
+        .wa-btn:hover { box-shadow: 0 6px 28px rgba(37, 211, 102, 0.4); }
+        .copy-toast {
+            position: fixed;
+            bottom: calc(100px + env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-primary);
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+        .empty-state, .error-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-secondary);
+        }
+        .empty-state .card-title, .error-state .card-title { font-size: 1.2rem; margin-bottom: 8px; }
+        .error-state .card-subtitle { color: #dc2626; }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <a href="/">← Studio</a>
+    <a href="/products">Products</a>
+</div>
+
+<div class="products-panel">
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error-state">
+            <div class="card-title">Something went wrong</div>
+            <div class="card-subtitle"><%= error %></div>
+        </div>
+    <% } else if (!products || products.length === 0) { %>
+        <p class="result-header">Products</p>
+        <p class="result-subtitle">• 0 items</p>
+        <div class="empty-state">
+            <div class="card-title">No products yet</div>
+            <div class="card-subtitle">Upload photos from the Studio to see them here.</div>
+            <a href="/" style="display:inline-block; margin-top:20px; padding:14px 24px; background: var(--copy-bg); border-radius: 12px; color: var(--text-primary); text-decoration: none; font-weight: 600;">Go to Studio</a>
+        </div>
+    <% } else { %>
+        <p class="result-header">Products</p>
+        <p class="result-subtitle">• <span id="queueCount"><%= products.length %></span> items</p>
+        <div class="progress-dots" id="progressDots"></div>
+        <div class="stack-wrapper">
+            <div class="stack-container" id="cardStack"></div>
+        </div>
+        <div class="card-details">
+            <div class="card-title" id="cardTitle">—</div>
+            <div class="card-subtitle" id="cardSubtitle">Swipe to see next</div>
+        </div>
+        <div class="action-row">
+            <button type="button" class="btn-copy" onclick="copyCurrent()">Copy link</button>
+            <button type="button" class="wa-btn" onclick="postCurrent()">Share to WhatsApp</button>
+        </div>
+        <div class="copy-toast" id="copyToast">Link copied!</div>
+    <% } %>
+</div>
+
+<% if (products && products.length > 0) { %>
+<script>
+    const uploadQueue = <%- JSON.stringify(products) %>;
+    let currentIndex = 0;
+    let drag = { active: false, startX: 0, currentX: 0, startTime: 0, raf: null };
+    const SWIPE_THRESHOLD = 80;
+    const THROW_MULT = 1.2;
+
+    function setCardTransform(el, x, rotateDeg) {
+        el.style.transform = `translate3d(${x}px, 0, 0) rotate(${rotateDeg}deg)`;
+    }
+
+    function renderStack() {
+        const container = document.getElementById('cardStack');
+        container.innerHTML = '';
+        const itemsToShow = uploadQueue.slice(currentIndex, currentIndex + 3);
+        const total = itemsToShow.length;
+
+        itemsToShow.forEach((item, i) => {
+            const card = document.createElement('div');
+            const isFront = i === 0;
+            card.className = 'product-card' + (total >= 2 && i === 1 ? ' stack-2' : '') + (total >= 3 && i === 2 ? ' stack-3' : '');
+            card.style.zIndex = total - 1 - i;
+            const badge = isFront ? `<div class="card-badge"><span class="check">✓</span> ${escapeHtml(item.price)}</div>` : '';
+            card.innerHTML = `<img src="${escapeHtml(item.previewUrl)}" alt="">${badge}`;
+            if (isFront) initSwipe(card);
+            container.appendChild(card);
+        });
+        updateUI();
+    }
+
+    function escapeHtml(s) {
+        if (!s) return '';
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+    }
+
+    function initSwipe(el) {
+        function getX(e) {
+            if (e.clientX != null) return e.clientX;
+            if (e.touches && e.touches[0]) return e.touches[0].clientX;
+            if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].clientX;
+            return drag.currentX;
+        }
+
+        function tick() {
+            if (!drag.active || !el.parentNode) return;
+            const x = drag.currentX - drag.startX;
+            const rotate = Math.max(-14, Math.min(14, x / 10));
+            setCardTransform(el, x, rotate);
+            drag.raf = requestAnimationFrame(tick);
+        }
+
+        function onStart(e) {
+            if (drag.active) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            e.preventDefault();
+            drag.active = true;
+            drag.startX = drag.currentX = getX(e);
+            drag.startTime = Date.now();
+            el.classList.add('dragging');
+            el.style.willChange = 'transform';
+            if (el.setPointerCapture && e.pointerId != null) el.setPointerCapture(e.pointerId);
+            drag.raf = requestAnimationFrame(tick);
+        }
+
+        function onMove(e) {
+            if (!drag.active) return;
+            if (e.cancelable) e.preventDefault();
+            drag.currentX = getX(e);
+        }
+
+        function onEnd(e) {
+            if (!drag.active) return;
+            const endX = getX(e);
+            const dx = endX - drag.startX;
+            const dt = Math.max(0.001, (Date.now() - drag.startTime) / 1000);
+            const velocityPx = Math.abs(dx / dt);
+            const shouldDismiss = Math.abs(dx) > SWIPE_THRESHOLD || velocityPx > 350;
+            const direction = dx > 0 ? 1 : -1;
+
+            drag.active = false;
+            cancelAnimationFrame(drag.raf);
+            el.classList.remove('dragging');
+            el.style.willChange = '';
+
+            if (shouldDismiss) {
+                const throwX = direction * Math.max(380, Math.abs(dx) * THROW_MULT);
+                el.style.transition = 'transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                setCardTransform(el, throwX, direction * 12);
+                setTimeout(nextItem, 300);
+            } else {
+                el.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                setCardTransform(el, 0, 0);
+            }
+        }
+
+        el.addEventListener('pointerdown', onStart, { passive: false });
+        el.addEventListener('pointermove', onMove, { passive: true });
+        el.addEventListener('pointerup', onEnd, { passive: true });
+        el.addEventListener('pointercancel', onEnd, { passive: true });
+        el.addEventListener('pointerleave', onEnd, { passive: true });
+        el.addEventListener('touchstart', onStart, { passive: false });
+        el.addEventListener('touchmove', onMove, { passive: false });
+        el.addEventListener('touchend', onEnd, { passive: true });
+        el.addEventListener('touchcancel', onEnd, { passive: true });
+    }
+
+    function nextItem() {
+        currentIndex++;
+        if (currentIndex < uploadQueue.length) {
+            renderStack();
+            updateUI();
+        } else {
+            document.querySelector('.products-panel').innerHTML = '<p class="result-header">Products</p><div class="card-details" style="text-align:center; padding: 56px 24px;"><div class="card-title" style="font-size: 1.35rem;">All done</div><div class="card-subtitle" style="margin-top: 10px;">No more products to view.</div><a href=\"/\" style="display:inline-block; margin-top:20px; padding:14px 24px; background: var(--copy-bg); border-radius: 12px; color: var(--text-primary); text-decoration: none; font-weight: 600;">Back to Studio</a></div>';
+        }
+    }
+
+    function copyCurrent() {
+        if (currentIndex >= uploadQueue.length) return;
+        const item = uploadQueue[currentIndex];
+        const text = item.price + '\n' + item.link;
+        navigator.clipboard.writeText(text).then(() => {
+            const toast = document.getElementById('copyToast');
+            toast.textContent = 'Link copied!';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 1800);
+        }).catch(() => {
+            const toast = document.getElementById('copyToast');
+            toast.textContent = 'Copy failed';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 1800);
+        });
+    }
+
+    function postCurrent() {
+        if (currentIndex >= uploadQueue.length) return;
+        const item = uploadQueue[currentIndex];
+        window.open(`https://wa.me/?text=${encodeURIComponent('Price: ' + item.price + '\n' + item.link)}`);
+    }
+
+    function updateUI() {
+        document.getElementById('queueCount').textContent = uploadQueue.length;
+        const dotsEl = document.getElementById('progressDots');
+        if (dotsEl && uploadQueue.length > 0) {
+            dotsEl.innerHTML = '';
+            for (let i = 0; i < Math.min(uploadQueue.length, 10); i++) {
+                const span = document.createElement('span');
+                if (i === currentIndex) span.classList.add('active');
+                dotsEl.appendChild(span);
+            }
+            if (uploadQueue.length > 10) dotsEl.innerHTML = '';
+        }
+        if (uploadQueue.length && currentIndex < uploadQueue.length) {
+            document.getElementById('cardTitle').textContent = uploadQueue[currentIndex].price;
+            document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} • Swipe to see next`;
+        }
+    }
+
+    renderStack();
+</script>
+<% } %>
+</body>
+</html>

@@ -2,9 +2,14 @@ const express = require('express');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
+
+const supabaseUrl = process.env.SUPABASE_URL || 'https://jfsqdzfeqgfmmkfzhrmq.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabase = supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // 1. CLOUDINARY CONFIG
 cloudinary.config({ 
@@ -79,6 +84,20 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
                 price: price, 
                 previewUrl: result.secure_url 
             });
+
+            if (supabase) {
+                try {
+                    await supabase.from('products').insert({
+                        public_id: result.public_id,
+                        price,
+                        link,
+                        preview_url: result.secure_url,
+                        bg_color: bgColor
+                    });
+                } catch (dbErr) {
+                    console.error('Supabase insert error:', dbErr.message);
+                }
+            }
         }
         res.json({ success: true, items: results });
     } catch (err) {
@@ -87,7 +106,31 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
     }
 });
 
-// 5. PREVIEW ROUTE (For WhatsApp Scrapers)
+// 5. PRODUCTS PAGE (from Supabase)
+app.get('/products', async (req, res) => {
+    if (!supabase) {
+        return res.render('products', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.' });
+    }
+    try {
+        const { data, error } = await supabase
+            .from('products')
+            .select('id, price, link, preview_url, created_at')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        const products = (data || []).map(row => ({
+            id: row.id,
+            price: row.price,
+            link: row.link,
+            previewUrl: row.preview_url
+        }));
+        res.render('products', { products, error: null });
+    } catch (err) {
+        console.error('Products fetch error:', err);
+        res.render('products', { products: [], error: err.message });
+    }
+});
+
+// 6. PREVIEW ROUTE (For WhatsApp Scrapers)
 app.get('/p/:publicId', (req, res) => {
     const { publicId } = req.params;
     const price = req.query.price || "Contact for Price";
