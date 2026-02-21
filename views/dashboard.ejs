@@ -131,20 +131,31 @@
             pointer-events: none;
         }
         .switch-wrap:has(input:checked)::after { transform: translateX(20px); }
-        .list-row .list-select {
-            width: auto;
-            min-width: 90px;
-            padding: 0 20px 0 0;
-            font-size: 15px;
-            color: var(--text);
-            background: transparent;
-            border: none;
-            outline: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238e8e93' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L2 4h8z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0 center;
+        .option-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
+        .option-chip {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            background: var(--surface-secondary);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s, color 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .option-chip:active { opacity: 0.9; }
+        .option-chip.selected {
+            background: var(--tint);
+            color: #fff;
+        }
+        .list-row-options .option-row { margin-left: auto; }
         .list-group .price-row { border-bottom: 0.5px solid var(--separator); }
         .list-group .price-row:last-child { border-bottom: none; }
         .price-row {
@@ -350,14 +361,15 @@
                 <label>Watermark</label>
                 <input type="text" id="watermarkInput" placeholder="Optional">
             </div>
-            <div class="list-row">
+            <div class="list-row list-row-options">
                 <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.82-.14 2.66-.4"/><path d="M22 12c0-5.5-4.5-10-10-10"/></svg>
                 <label>Background</label>
-                <select name="bgColor" id="bgColor" class="list-select">
-                    <option value="white">White</option>
-                    <option value="black">Black</option>
-                    <option value="#f8bbd0">Pink</option>
-                </select>
+                <input type="hidden" name="bgColor" id="bgColor" value="white">
+                <div class="option-row" role="group" aria-label="Background color">
+                    <button type="button" class="option-chip selected" data-value="white">White</button>
+                    <button type="button" class="option-chip" data-value="black">Black</button>
+                    <button type="button" class="option-chip" data-value="#f8bbd0">Pink</button>
+                </div>
             </div>
         </div>
         <p class="list-group-title">Photos</p>
@@ -421,6 +433,18 @@
     const SWIPE_THRESHOLD = 80;
     const VELOCITY_THRESHOLD = 0.4;
     const THROW_MULT = 1.2;
+
+    // Background option chips
+    document.querySelectorAll('.option-chip').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var group = btn.closest('.option-row');
+            var hidden = document.getElementById('bgColor');
+            if (!group || !hidden) return;
+            group.querySelectorAll('.option-chip').forEach(function(b) { b.classList.remove('selected'); });
+            btn.classList.add('selected');
+            hidden.value = btn.getAttribute('data-value');
+        });
+    });
 
     // Logic to show Thumbnail + Price Input
     document.getElementById('fileInput').onchange = (e) => {
