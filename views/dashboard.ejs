@@ -1,67 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>Vendor Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #25D366; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        #loading { display: none; text-align: center; margin-top: 20px; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #25D366; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #result { display: none; margin-top: 20px; background: #e7f3ff; padding: 15px; border-radius: 8px; word-break: break-all; }
+        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; max-width: 600px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .item-card { background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 10px; text-align: center; }
+        .item-card img { width: 100%; border-radius: 5px; }
+        .wa-btn { background: #25D366; }
+        #loading { display: none; color: #007bff; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Vendor Status Tool</h2>
-        <form id="uploadForm">
-            <input type="file" id="fileInput" required>
-            <input type="text" id="priceInput" placeholder="Price (e.g. N25,000)" required>
-            <button type="submit" id="btnText">Generate Square Link</button>
-        </form>
 
-        <div id="loading">
-            <div class="spinner"></div>
-            <p>Processing Square Preview...</p>
-        </div>
+<div class="card">
+    <h2>🚀 Bulk AI Studio</h2>
+    <form id="bulkForm">
+        <label>1. Pick Background Theme:</label>
+        <select name="bgColor">
+            <option value="white">Pristine White</option>
+            <option value="black">Premium Black</option>
+            <option value="#f8bbd0">Soft Pink</option>
+            <option value="#e0e0e0">Light Grey</option>
+            <option value="#fff9c4">Warm Cream</option>
+        </select>
 
-        <div id="result">
-            <strong>Ready! Copy link:</strong><br>
-            <p id="linkOutput" style="font-size: 0.9em;"></p>
-            <button onclick="copyLink()" style="background: #007bff;">Copy to Clipboard</button>
-        </div>
-    </div>
+        <label>2. Select Photos/Videos:</label>
+        <input type="file" id="fileInput" name="files" multiple required>
+        
+        <div id="priceInputs"></div>
+        <button type="submit" id="uploadBtn">Upload & Enhance</button>
+    </form>
+    <div id="loading">✨ AI is stripping backgrounds and generating studio lighting...</div>
+</div>
 
-    <script>
-        document.getElementById('uploadForm').onsubmit = async (e) => {
-            e.preventDefault();
-            document.getElementById('uploadForm').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
+<div id="resultArea" style="display:none;">
+    <div class="gallery" id="bulkGallery"></div>
+</div>
 
-            const formData = new FormData();
-            formData.append('file', document.getElementById('fileInput').files[0]);
-            formData.append('price', document.getElementById('priceInput').value);
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const priceInputs = document.getElementById('priceInputs');
 
-            const res = await fetch('/upload', { method: 'POST', body: formData });
-            const data = await res.json();
+    fileInput.onchange = () => {
+        priceInputs.innerHTML = '<h4>Enter Prices:</h4>';
+        Array.from(fileInput.files).forEach((file, i) => {
+            priceInputs.innerHTML += `<input type="text" name="prices" placeholder="Price for ${file.name}" required>`;
+        });
+    };
 
-            document.getElementById('loading').style.display = 'none';
-            if(data.success) {
-                document.getElementById('result').style.display = 'block';
-                document.getElementById('linkOutput').innerText = data.link;
-            } else {
-                alert("Upload failed! Try a smaller file.");
-                document.getElementById('uploadForm').style.display = 'block';
-            }
-        };
+    document.getElementById('bulkForm').onsubmit = async (e) => {
+        e.preventDefault();
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('uploadBtn').disabled = true;
 
-        function copyLink() {
-            const text = document.getElementById('linkOutput').innerText;
-            navigator.clipboard.writeText(text);
-            alert("Copied! Now paste into WhatsApp.");
+        const formData = new FormData(e.target);
+        const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        document.getElementById('loading').style.display = 'none';
+        if(data.success) {
+            const gallery = document.getElementById('bulkGallery');
+            gallery.innerHTML = '';
+            data.items.forEach(item => {
+                gallery.innerHTML += `
+                    <div class="item-card">
+                        <img src="${item.previewUrl}">
+                        <p>Price: ${item.price}</p>
+                        <button class="wa-btn" onclick="shareSingle('${item.link}', '${item.price}')">Share to Status</button>
+                    </div>`;
+            });
+            document.getElementById('resultArea').style.display = 'block';
         }
-    </script>
+    };
+
+    function shareSingle(link, price) {
+        const text = encodeURIComponent(`Price: ${price}\n\nTap to view details: ${link}`);
+        window.open(`https://wa.me/?text=${text}`);
+    }
+</script>
 </body>
 </html>
