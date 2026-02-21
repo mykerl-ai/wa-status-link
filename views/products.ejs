@@ -13,17 +13,18 @@
         :root {
             --app-bg: #f5f5f7;
             --surface: #ffffff;
-            --surface-secondary: #fafafa;
-            --separator: rgba(60,60,67,0.12);
+            --surface-secondary: #f5f5f7;
+            --separator: rgba(60,60,67,0.08);
             --text: #1d1d1f;
             --text-secondary: #6e6e73;
             --text-tertiary: #8e8e93;
             --tint: #007aff;
             --green: #34c759;
-            --radius: 12px;
-            --radius-lg: 16px;
-            --tab-height: 56px;
-            --header-height: 52px;
+            --radius: 20px;
+            --radius-sm: 12px;
+            --radius-lg: 20px;
+            --tab-height: 52px;
+            --header-height: 48px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html { height: 100%; }
@@ -48,16 +49,12 @@
             align-items: center;
             border-bottom: 0.5px solid var(--separator);
         }
-        .app-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
-        .app-content {
-            padding: 16px 20px 24px;
-            max-width: 480px;
-            margin: 0 auto;
-        }
-        .result-label { font-size: 13px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.02em; margin-bottom: 4px; }
-        .result-count { font-size: 17px; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; }
-        .progress-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
-        .progress-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--separator); transition: all 0.2s; }
+        .app-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+        .app-content { padding: 12px 16px 20px; max-width: 480px; margin: 0 auto; }
+        .result-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.04em; margin-bottom: 2px; }
+        .result-count { font-size: 15px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
+        .progress-dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 12px; }
+        .progress-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--separator); transition: all 0.2s; }
         .progress-dots span.active { background: var(--tint); transform: scale(1.2); }
         .stack-wrapper {
             flex: 1;
@@ -74,7 +71,7 @@
             width: 100%; height: 100%;
             background: var(--surface);
             border-radius: var(--radius-lg);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 16px rgba(0,0,0,0.06);
             overflow: hidden;
             touch-action: none;
             user-select: none;
@@ -101,57 +98,65 @@
             gap: 6px;
         }
         .card-badge .check { color: #34d359; }
-        .card-details { margin-top: 16px; padding: 0 4px; }
-        .card-title { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
-        .card-subtitle { font-size: 15px; color: var(--text-tertiary); margin-top: 4px; }
-        .action-row { display: flex; gap: 12px; margin-top: 16px; }
+        .card-details { margin-top: 12px; padding: 0 2px; }
+        .card-title { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+        .card-subtitle { font-size: 13px; color: var(--text-tertiary); margin-top: 2px; }
+        .action-row { display: flex; gap: 10px; margin-top: 12px; }
         .action-row button {
             flex: 1;
-            min-height: 50px;
-            padding: 14px 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            min-height: 42px;
             border-radius: var(--radius);
             border: none;
-            font-size: 17px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
             transition: opacity 0.2s;
         }
+        .action-row button .icon { width: 16px; height: 16px; }
         .action-row button:active { opacity: 0.85; }
         .btn-copy { background: var(--surface-secondary); color: var(--text); }
         .wa-btn { background: var(--green); color: #fff; }
         .copy-toast {
             position: fixed;
             left: 20px; right: 20px;
-            bottom: calc(var(--tab-height) + env(safe-area-inset-bottom) + 16px);
+            bottom: calc(var(--tab-height) + env(safe-area-inset-bottom) + 12px);
             background: var(--text);
             color: #fff;
-            padding: 14px 20px;
+            padding: 10px 16px;
             border-radius: var(--radius);
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
             text-align: center;
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(8px);
             transition: opacity 0.25s, transform 0.25s;
             z-index: 100;
             pointer-events: none;
         }
         .copy-toast.show { opacity: 1; transform: translateY(0); }
-        .empty-state, .error-state { text-align: center; padding: 48px 24px; color: var(--text-secondary); }
-        .empty-state .card-title, .error-state .card-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .empty-state, .error-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+        .empty-state .card-title, .error-state .card-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
         .error-state .card-subtitle { color: #dc2626; }
         .empty-state a {
-            display: inline-block;
-            margin-top: 24px;
-            padding: 14px 28px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 10px 20px;
             background: var(--tint);
             color: #fff;
             border-radius: var(--radius);
-            font-size: 17px;
+            font-size: 15px;
             font-weight: 600;
             text-decoration: none;
         }
+        .empty-state a .icon { width: 18px; height: 18px; }
         .tab-bar {
             position: fixed;
             bottom: 0;
@@ -181,7 +186,7 @@
             -webkit-tap-highlight-color: transparent;
         }
         .tab-item.active { color: var(--tint); }
-        .tab-item svg { width: 26px; height: 26px; }
+        .tab-item svg { width: 22px; height: 22px; }
         .tab-item.active svg { stroke: var(--tint); }
     </style>
 </head>
@@ -203,7 +208,7 @@
         <div class="empty-state">
             <div class="card-title">No products yet</div>
             <div class="card-subtitle">Upload photos from the Studio to see them here.</div>
-            <a href="/">Open Studio</a>
+            <a href="/"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Open Studio</a>
         </div>
     <% } else { %>
         <p class="result-label">Products</p>
@@ -217,8 +222,14 @@
             <div class="card-subtitle" id="cardSubtitle">Swipe left or right to browse</div>
         </div>
         <div class="action-row">
-            <button type="button" class="btn-copy" onclick="copyCurrent()">Copy link</button>
-            <button type="button" class="wa-btn" onclick="postCurrent()">Share</button>
+            <button type="button" class="btn-copy" onclick="copyCurrent()">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                Copy
+            </button>
+            <button type="button" class="wa-btn" onclick="postCurrent()">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                Share
+            </button>
         </div>
         <div class="copy-toast" id="copyToast">Link copied</div>
     <% } %>

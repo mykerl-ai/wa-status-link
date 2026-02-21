@@ -14,17 +14,18 @@
         :root {
             --app-bg: #f5f5f7;
             --surface: #ffffff;
-            --surface-secondary: #fafafa;
-            --separator: rgba(60,60,67,0.12);
+            --surface-secondary: #f5f5f7;
+            --separator: rgba(60,60,67,0.08);
             --text: #1d1d1f;
             --text-secondary: #6e6e73;
             --text-tertiary: #8e8e93;
             --tint: #007aff;
             --green: #34c759;
-            --radius: 12px;
-            --radius-lg: 16px;
-            --tab-height: 56px;
-            --header-height: 52px;
+            --radius: 20px;
+            --radius-sm: 12px;
+            --radius-lg: 20px;
+            --tab-height: 52px;
+            --header-height: 48px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html { height: 100%; }
@@ -50,49 +51,49 @@
             align-items: center;
             border-bottom: 0.5px solid var(--separator);
         }
-        .app-title {
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .app-content {
-            padding: 16px 20px 24px;
-            max-width: 480px;
-            margin: 0 auto;
-        }
-
-        /* iOS-style list groups */
+        .app-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+        .app-content { padding: 12px 16px 20px; max-width: 480px; margin: 0 auto; }
         .list-group {
             background: var(--surface);
             border-radius: var(--radius-lg);
             overflow: hidden;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
         .list-group-title {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 600;
             color: var(--text-tertiary);
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-            padding: 24px 20px 8px;
+            letter-spacing: 0.04em;
+            padding: 16px 16px 6px;
         }
         .list-row {
             min-height: 44px;
-            padding: 12px 20px;
+            padding: 10px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
             border-bottom: 0.5px solid var(--separator);
         }
         .list-row:last-child { border-bottom: none; }
-        .list-row label { font-size: 17px; color: var(--text); }
+        .list-row-file { overflow: hidden; }
+        .file-input-overlay {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            font-size: 0;
+        }
+        .list-row .row-icon { width: 20px; height: 20px; color: var(--text-tertiary); flex-shrink: 0; }
+        .list-row label { font-size: 15px; color: var(--text); flex: 1; min-width: 0; }
         .list-row input[type="text"] {
             flex: 1;
-            margin-left: 12px;
+            min-width: 0;
             border: none;
             background: transparent;
-            font-size: 17px;
+            font-size: 15px;
             color: var(--text);
             text-align: right;
             outline: none;
@@ -132,9 +133,9 @@
         .switch-wrap:has(input:checked)::after { transform: translateX(20px); }
         .list-row .list-select {
             width: auto;
-            min-width: 100px;
-            padding: 0 24px 0 0;
-            font-size: 17px;
+            min-width: 90px;
+            padding: 0 20px 0 0;
+            font-size: 15px;
             color: var(--text);
             background: transparent;
             border: none;
@@ -144,38 +145,26 @@
             background-repeat: no-repeat;
             background-position: right 0 center;
         }
-        .list-group .price-row {
-            border-bottom: 0.5px solid var(--separator);
-        }
+        .list-group .price-row { border-bottom: 0.5px solid var(--separator); }
         .list-group .price-row:last-child { border-bottom: none; }
         .price-row {
             display: flex;
             align-items: center;
             gap: 12px;
-            min-height: 44px;
-            padding: 10px 20px;
+            min-height: 40px;
+            padding: 8px 16px;
         }
-        .thumb-preview {
-            width: 44px;
-            height: 44px;
-            border-radius: 8px;
-            object-fit: cover;
-            background: var(--surface-secondary);
-        }
-        .price-row input {
-            flex: 1;
-            border: none;
-            background: transparent;
-            font-size: 17px;
-            outline: none;
-        }
+        .thumb-preview { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; background: var(--surface-secondary); }
+        .price-row input { flex: 1; border: none; background: transparent; font-size: 15px; outline: none; }
         .btn-primary {
-            display: block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             width: 100%;
-            min-height: 50px;
-            padding: 14px 20px;
-            margin-top: 8px;
-            font-size: 17px;
+            padding: 10px 18px;
+            margin-top: 6px;
+            font-size: 15px;
             font-weight: 600;
             color: #fff;
             background: var(--tint);
@@ -185,6 +174,7 @@
             font-family: inherit;
             transition: opacity 0.2s;
         }
+        .btn-primary .icon { width: 18px; height: 18px; }
         .btn-primary:active { opacity: 0.85; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         #loading {
@@ -207,20 +197,10 @@
             padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom));
         }
         #resultArea .app-content { flex: 1; display: flex; flex-direction: column; padding-top: 8px; max-width: 100%; }
-        .result-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-tertiary);
-            letter-spacing: 0.02em;
-            margin-bottom: 4px;
-        }
-        .result-count { font-size: 17px; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; }
-        .progress-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
-        .progress-dots span {
-            width: 6px; height: 6px; border-radius: 50%;
-            background: var(--separator);
-            transition: all 0.2s;
-        }
+        .result-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.04em; margin-bottom: 2px; }
+        .result-count { font-size: 15px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
+        .progress-dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 12px; }
+        .progress-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--separator); transition: all 0.2s; }
         .progress-dots span.active { background: var(--tint); transform: scale(1.2); }
         .stack-wrapper {
             flex: 1;
@@ -238,7 +218,7 @@
             height: 100%;
             background: var(--surface);
             border-radius: var(--radius-lg);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 16px rgba(0,0,0,0.06);
             overflow: hidden;
             touch-action: none;
             user-select: none;
@@ -259,56 +239,57 @@
         }
         .product-card img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
         .card-badge {
-            position: absolute; bottom: 16px; left: 16px;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            position: absolute; bottom: 12px; left: 12px;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             color: white;
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 14px;
+            font-size: 12px;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
         .card-badge .check { color: #34d359; }
-        .card-details { margin-top: 16px; padding: 0 4px; }
-        .card-title { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
-        .card-subtitle { font-size: 15px; color: var(--text-tertiary); margin-top: 4px; }
-        .action-row { display: flex; gap: 12px; margin-top: 16px; }
+        .card-details { margin-top: 12px; padding: 0 2px; }
+        .card-title { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+        .card-subtitle { font-size: 13px; color: var(--text-tertiary); margin-top: 2px; }
+        .action-row { display: flex; gap: 10px; margin-top: 12px; }
         .action-row button {
             flex: 1;
-            min-height: 50px;
-            padding: 14px 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            min-height: 42px;
             border-radius: var(--radius);
             border: none;
-            font-size: 17px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
             transition: opacity 0.2s;
         }
+        .action-row button .icon { width: 16px; height: 16px; }
         .action-row button:active { opacity: 0.85; }
-        .btn-copy {
-            background: var(--surface-secondary);
-            color: var(--text);
-        }
+        .btn-copy { background: var(--surface-secondary); color: var(--text); }
         .wa-btn { background: var(--green); color: #fff; }
         .copy-toast {
             position: fixed;
-            left: 20px;
-            right: 20px;
-            bottom: calc(var(--tab-height) + env(safe-area-inset-bottom) + 16px);
+            left: 20px; right: 20px;
+            bottom: calc(var(--tab-height) + env(safe-area-inset-bottom) + 12px);
             background: var(--text);
             color: #fff;
-            padding: 14px 20px;
+            padding: 10px 16px;
             border-radius: var(--radius);
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
             text-align: center;
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(8px);
             transition: opacity 0.25s, transform 0.25s;
             z-index: 100;
             pointer-events: none;
@@ -336,7 +317,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 2px;
             text-decoration: none;
             color: var(--text-tertiary);
             font-size: 10px;
@@ -345,7 +326,7 @@
             -webkit-tap-highlight-color: transparent;
         }
         .tab-item.active { color: var(--tint); }
-        .tab-item svg { width: 26px; height: 26px; }
+        .tab-item svg { width: 22px; height: 22px; }
         .tab-item.active svg { stroke: var(--tint); }
     </style>
 </head>
@@ -360,14 +341,17 @@
         <p class="list-group-title">Create</p>
         <div class="list-group">
             <div class="list-row">
+                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 <label>Remove background</label>
                 <span class="switch-wrap"><input type="checkbox" id="removeBgToggle" checked></span>
             </div>
             <div class="list-row">
+                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
                 <label>Watermark</label>
                 <input type="text" id="watermarkInput" placeholder="Optional">
             </div>
             <div class="list-row">
+                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.82-.14 2.66-.4"/><path d="M22 12c0-5.5-4.5-10-10-10"/></svg>
                 <label>Background</label>
                 <select name="bgColor" id="bgColor" class="list-select">
                     <option value="white">White</option>
@@ -378,13 +362,17 @@
         </div>
         <p class="list-group-title">Photos</p>
         <div class="list-group">
-            <label class="list-row" style="cursor:pointer;display:flex;">
-                <span style="font-size:17px;color:var(--text);">Select photos</span>
-                <input type="file" id="fileInput" name="files" multiple required accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;left:0;top:0;cursor:pointer;">
+            <label class="list-row list-row-file" style="cursor:pointer;position:relative;">
+                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                <span style="font-size:15px;color:var(--text);">Select photos</span>
+                <input type="file" id="fileInput" name="files" multiple required accept="image/*" class="file-input-overlay">
             </label>
             <div id="priceInputs"></div>
         </div>
-        <button type="submit" class="btn-primary" id="uploadBtn">Generate links</button>
+        <button type="submit" class="btn-primary" id="uploadBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/><path d="M5 21l2-6 4 2-2 6"/><path d="M19 21l-2-6-4 2 2 6"/></svg>
+            Generate links
+        </button>
     </form>
     <div id="loading">Processing…</div>
 </main>
@@ -402,8 +390,14 @@
             <div class="card-subtitle" id="cardSubtitle">Swipe left or right to browse</div>
         </div>
         <div class="action-row">
-            <button type="button" class="btn-copy" onclick="copyCurrent()">Copy link</button>
-            <button type="button" class="wa-btn" onclick="postCurrent()">Share</button>
+            <button type="button" class="btn-copy" onclick="copyCurrent()">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                Copy
+            </button>
+            <button type="button" class="wa-btn" onclick="postCurrent()">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                Share
+            </button>
         </div>
     </main>
     <div class="copy-toast" id="copyToast">Link copied</div>
