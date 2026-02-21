@@ -31,34 +31,24 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
     try {
         const prices = Array.isArray(req.body.prices) ? req.body.prices : [req.body.prices];
         const bgColor = req.body.bgColor || "white";
-        // Ensure this is strictly a boolean
         const shouldRemoveBg = String(req.body.removeBg) === 'true';
         const watermarkText = req.body.watermarkText ? String(req.body.watermarkText).trim() : "";
-        
         const results = [];
 
         for (let i = 0; i < req.files.length; i++) {
             const file = req.files[i];
             const price = prices[i] || "Contact for Price";
 
-            // Initialize a clean array
             let transformations = [];
             
-            // 1. BG Removal: Only push if true
             if (shouldRemoveBg) {
                 transformations.push({ effect: "background_removal" });
             }
             
-            // 2. Framing: Essential component
-            transformations.push({ 
-                width: 800, 
-                height: 1200, 
-                crop: "pad", 
-                background: bgColor 
-            });
+            transformations.push({ width: 800, height: 1200, crop: "pad", background: bgColor });
 
-            // 3. Watermark: Only push if text exists
             if (watermarkText !== "") {
+                // Fixed: Using the string-based overlay format to avoid "component - 0" errors
                 transformations.push({
                     overlay: { 
                         font_family: "Arial", 
@@ -67,45 +57,27 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
                         text: watermarkText.toUpperCase() 
                     },
                     color: bgColor === 'white' ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.5)",
-                    gravity: "south_east", 
-                    x: 25, 
-                    y: 25
+                    gravity: "south_east", x: 25, y: 25
                 });
             }
 
-            // 4. Quality Finish: Standardized object
-            transformations.push({ 
-                quality: "auto:best", 
-                fetch_format: "jpg", 
-                dpr: "2.0" 
-            });
-
-            // Debugging: Log the array to your Render console
-            console.log(`Uploading ${file.originalname} with:`, JSON.stringify(transformations));
+            transformations.push({ quality: "auto:best", fetch_format: "jpg", dpr: "2.0" });
 
             const result = await cloudinary.uploader.upload(file.path, {
                 resource_type: "auto",
-                eager: transformations,
-                eager_async: false 
+                transformation: transformations // Use 'transformation' instead of 'eager' for direct upload styling
             });
 
-            inventoryStatus[result.public_id] = { 
-                price, 
-                type: result.resource_type, 
-                isSoldOut: false,
-                bg: bgColor,
-                rm: shouldRemoveBg,
-                wm: watermarkText
-            };
+            inventoryStatus[result.public_id] = { price, type: result.resource_type, isSoldOut: false };
 
             const host = req.get('host');
             const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
-            const link = `${protocol}://${host}/p/${result.public_id}?price=${encodeURIComponent(price)}&bg=${encodeURIComponent(bgColor)}&rm=${shouldRemoveBg}&wm=${encodeURIComponent(watermarkText)}`;
+            const link = `${protocol}://${host}/p/${result.public_id}?price=${encodeURIComponent(price)}&bg=${encodeURIComponent(bgColor)}`;
             
             results.push({ 
                 link: link, 
                 price: price, 
-                previewUrl: (result.eager && result.eager[0]) ? result.eager[0].secure_url : result.secure_url 
+                previewUrl: result.secure_url 
             });
         }
         res.json({ success: true, items: results });

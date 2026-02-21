@@ -2,146 +2,109 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>AI Vendor Studio</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: 'DM Sans', sans-serif; 
-            background: #f0f2f5; 
-            color: #1a1a1a;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        /* --- Input Section --- */
-        .card-panel { 
-            background: white; 
-            padding: 24px; 
-            border-radius: 24px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
-            width: 100%;
-            max-width: 450px; 
-            margin-bottom: 20px;
-        }
-
-        h2 { margin-bottom: 20px; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
-
-        .setting-group {
-            background: #f8f9fa;
-            padding: 16px;
-            border-radius: 16px;
-            margin-bottom: 12px;
-        }
-
+        body { font-family: 'DM Sans', sans-serif; background: #e8e4f0; padding: 24px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .card-panel { background: white; padding: 24px; border-radius: 28px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); width: 100%; max-width: 420px; }
+        h2 { margin-bottom: 20px; }
+        .setting-group { background: #f8f9fa; padding: 16px; border-radius: 16px; margin-bottom: 12px; }
         .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        label { font-weight: 500; font-size: 0.9rem; color: #4b5563; }
+        input[type="text"], select, input[type="file"] { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e5e7eb; margin-top: 5px; outline: none; }
         
-        label { font-weight: 500; font-size: 0.9rem; color: #4b5563; display: block; margin-bottom: 5px; }
+        .price-row { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #eee; padding: 8px; border-radius: 12px; margin-bottom: 8px; }
+        .thumb-preview { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #eee; }
+        .price-row input { margin: 0; flex: 1; }
 
-        input[type="text"], select, input[type="file"] { 
-            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e5e7eb; 
-            margin-bottom: 10px; font-size: 0.95rem; outline: none;
-        }
-
-        button { 
-            width: 100%; padding: 16px; border-radius: 12px; border: none; 
-            font-weight: 700; cursor: pointer; transition: transform 0.2s, background 0.2s;
-        }
-
+        button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; margin-top: 10px; }
         .btn-primary { background: #007bff; color: white; }
-        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+        #loading { display: none; text-align: center; padding: 20px; color: #007bff; font-weight: bold; }
 
-        /* --- Swipe Stack Section --- */
-        #resultArea { width: 100%; max-width: 450px; display: none; }
-
-        .stack-container {
-            height: 480px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            margin-top: 10px;
-            perspective: 1000px;
-        }
-
+        /* Result area – phone-style frame (like YOUR CONCERTS) */
+        #resultArea { display: none; width: 100%; max-width: 420px; background: white; border-radius: 32px; padding: 28px 24px 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.08); }
+        .result-header { text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; color: #9ca3af; margin-bottom: 4px; }
+        .result-subtitle { font-size: 1.1rem; font-weight: 600; color: #374151; margin-bottom: 24px; }
+        .stack-wrapper { position: relative; height: 420px; display: flex; align-items: center; justify-content: center; }
+        .stack-container { position: relative; width: 300px; height: 400px; }
         .product-card {
             position: absolute;
+            left: 0;
+            top: 0;
             width: 300px;
-            height: 420px;
+            height: 400px;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08);
             overflow: hidden;
-            cursor: grab;
-            user-select: none;
             touch-action: none;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
-
-        .product-card img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-
-        .card-info {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            padding: 20px; background: linear-gradient(transparent, rgba(0,0,0,0.85));
-            color: white;
+        .product-card.stack-2 { transform: translate(14px, 16px) scale(0.96); z-index: 0; box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06); }
+        .product-card.stack-3 { transform: translate(28px, 32px) scale(0.92); z-index: -1; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .product-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .card-badge {
+            position: absolute; bottom: 16px; left: 16px;
+            background: rgba(0,0,0,0.5); color: white; padding: 8px 14px; border-radius: 20px;
+            font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
         }
-
-        /* --- Controls --- */
-        .queue-controls { text-align: center; margin-top: 20px; }
-        .wa-btn { background: #25D366; color: white; font-size: 1.1rem; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.4); }
-        
-        #loading { 
-            display: none; text-align: center; font-weight: 600; color: #007bff; padding: 20px; 
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        .card-badge .check { color: #22c55e; }
+        .card-details { margin-top: 20px; padding: 0 4px; }
+        .card-title { font-size: 1.5rem; font-weight: 700; color: #1f2937; line-height: 1.2; }
+        .card-subtitle { font-size: 0.95rem; color: #6b7280; margin-top: 4px; }
+        .wa-btn { background: #25D366; color: white; margin-top: 24px; padding: 14px 20px; border-radius: 14px; font-size: 1rem; }
+        .bottom-nav { display: flex; justify-content: center; gap: 48px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #f3f4f6; }
+        .nav-icon { width: 28px; height: 28px; opacity: 0.6; }
+        .nav-icon.active { opacity: 1; }
     </style>
 </head>
 <body>
 
 <div class="card-panel">
-    <h2>📸 AI E-com Studio</h2>
+    <h2>📸 AI Studio</h2>
     <form id="bulkForm">
         <div class="setting-group">
             <div class="toggle-row">
                 <span>✨ Remove Background</span>
                 <input type="checkbox" id="removeBgToggle" checked style="width: 20px; height: 20px;">
             </div>
-            <label>Watermark Text (Optional)</label>
+            <label>Watermark (Optional)</label>
             <input type="text" id="watermarkInput" placeholder="e.g. @MyBrand">
         </div>
 
-        <label>Studio Background Theme</label>
+        <label>Theme Color</label>
         <select name="bgColor" id="bgColor">
-            <option value="white">Pristine White</option>
-            <option value="black">Premium Black</option>
-            <option value="#f8bbd0">Soft Pink</option>
-            <option value="#e0e0e0">Light Grey</option>
-            <option value="#fff9c4">Warm Cream</option>
+            <option value="white">White</option>
+            <option value="black">Black</option>
+            <option value="#f8bbd0">Pink</option>
         </select>
 
-        <label>Select Product Photos</label>
+        <label style="margin-top: 15px; display: block;">Select Photos</label>
         <input type="file" id="fileInput" name="files" multiple required accept="image/*">
         
-        <div id="priceInputs"></div>
-        <button type="submit" class="btn-primary" id="uploadBtn">Generate & Enhance</button>
+        <div id="priceInputs" style="margin-top: 15px;"></div>
+        
+        <button type="submit" class="btn-primary" id="uploadBtn">Generate Studio Links</button>
     </form>
-    <div id="loading">AI is polishing your products...</div>
+    <div id="loading">AI is processing...</div>
 </div>
 
 <div id="resultArea">
-    <div class="stack-container" id="cardStack"></div>
-    
-    <div class="queue-controls">
-        <h4 id="queueText" style="margin-bottom: 15px; color: #64748b;"></h4>
-        <button class="wa-btn" id="shareBtn" onclick="postCurrent()">Post Top Card to Status 🚀</button>
-        <p style="margin-top: 15px; font-size: 0.8rem; color: #94a3b8;">Swipe card to skip • Button to Share</p>
+    <p class="result-header">Your items</p>
+    <p class="result-subtitle" id="resultSubtitle">• <span id="queueCount">0</span> items</p>
+    <div class="stack-wrapper">
+        <div class="stack-container" id="cardStack"></div>
+    </div>
+    <div class="card-details">
+        <div class="card-title" id="cardTitle">—</div>
+        <div class="card-subtitle" id="cardSubtitle">Swipe to see next</div>
+    </div>
+    <button class="wa-btn" onclick="postCurrent()">Post to WhatsApp Status</button>
+    <div class="bottom-nav">
+        <svg class="nav-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
     </div>
 </div>
 
@@ -151,26 +114,39 @@
     let isDragging = false;
     let startX = 0;
 
-    // Handle price input generation
+    // Logic to show Thumbnail + Price Input
     document.getElementById('fileInput').onchange = (e) => {
         const container = document.getElementById('priceInputs');
         container.innerHTML = '';
-        Array.from(e.target.files).forEach((file, i) => {
+        const files = Array.from(e.target.files);
+
+        files.forEach((file, i) => {
+            const reader = new FileReader();
+            const row = document.createElement('div');
+            row.className = 'price-row';
+            
+            const img = document.createElement('img');
+            img.className = 'thumb-preview';
+            
             const input = document.createElement('input');
             input.type = 'text';
             input.name = 'prices';
-            input.placeholder = `Price for ${file.name}`;
+            input.placeholder = `Price...`;
             input.required = true;
-            container.appendChild(input);
+
+            reader.onload = (event) => { img.src = event.target.result; };
+            reader.readAsDataURL(file);
+
+            row.appendChild(img);
+            row.appendChild(input);
+            container.appendChild(row);
         });
     };
 
-    // Form Submission
     document.getElementById('bulkForm').onsubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('uploadBtn');
         const loader = document.getElementById('loading');
-        
         btn.disabled = true;
         loader.style.display = 'block';
 
@@ -178,78 +154,61 @@
         formData.append('removeBg', document.getElementById('removeBgToggle').checked);
         formData.append('watermarkText', document.getElementById('watermarkInput').value);
 
-        try {
-            const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
-            const data = await res.json();
-            
-            if (data.success) {
-                uploadQueue = data.items;
-                currentIndex = 0;
-                document.querySelector('.card-panel').style.display = 'none';
-                document.getElementById('resultArea').style.display = 'block';
-                renderStack();
-                updateUI();
-            }
-        } catch (err) {
-            alert("Upload failed. Check console.");
-        } finally {
-            loader.style.display = 'none';
-            btn.disabled = false;
+        const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        loader.style.display = 'none';
+        btn.disabled = false;
+
+        if (data.success) {
+            uploadQueue = data.items;
+            currentIndex = 0;
+            document.querySelector('.card-panel').style.display = 'none';
+            document.getElementById('resultArea').style.display = 'block';
+            renderStack();
         }
     };
 
     function renderStack() {
         const container = document.getElementById('cardStack');
         container.innerHTML = '';
-        
-        // Show current + next 2 for visual depth
         const itemsToShow = uploadQueue.slice(currentIndex, currentIndex + 3);
-        
-        itemsToShow.reverse().forEach((item, i) => {
+        const total = itemsToShow.length;
+
+        itemsToShow.forEach((item, i) => {
             const card = document.createElement('div');
-            card.className = 'product-card';
-            
-            // Visual stack offset
-            const reverseIdx = itemsToShow.length - 1 - i;
-            card.style.zIndex = i;
-            card.style.transform = `translateY(${reverseIdx * 10}px) scale(${1 - (reverseIdx * 0.04)})`;
-            
-            card.innerHTML = `
-                <img src="${item.previewUrl}">
-                <div class="card-info">
-                    <h3>Price: ${item.price}</h3>
-                </div>
-            `;
-            
-            if (reverseIdx === 0) initSwipe(card);
+            const isFront = i === 0;
+            card.className = 'product-card' + (total >= 2 && i === 1 ? ' stack-2' : '') + (total >= 3 && i === 2 ? ' stack-3' : '');
+            card.style.zIndex = total - 1 - i;
+            const badge = isFront ? `<div class="card-badge"><span class="check">✓</span> ${item.price}</div>` : '';
+            card.innerHTML = `<img src="${item.previewUrl}" alt="">${badge}`;
+            if (isFront) initSwipe(card);
             container.appendChild(card);
         });
+        updateUI();
     }
 
     function initSwipe(el) {
         el.onmousedown = el.ontouchstart = (e) => {
             isDragging = true;
-            startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
             el.style.transition = 'none';
+            startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
         };
-
         document.onmousemove = document.ontouchmove = (e) => {
             if (!isDragging) return;
-            const moveX = (e.type === 'touchmove' ? e.touches[0].clientX : e.clientX) - startX;
-            el.style.transform = `translateX(${moveX}px) rotate(${moveX / 15}deg)`;
+            let x = (e.type === 'touchmove' ? e.touches[0].clientX : e.clientX) - startX;
+            el.style.transform = `translateX(${x}px) rotate(${x/15}deg)`;
         };
-
         document.onmouseup = document.ontouchend = (e) => {
             if (!isDragging) return;
             isDragging = false;
-            const endX = (e.type === 'touchend' ? e.changedTouches[0].clientX : e.clientX) - startX;
-
-            if (Math.abs(endX) > 120) {
-                el.style.transition = 'transform 0.4s ease-in';
-                el.style.transform = `translateX(${endX > 0 ? 1000 : -1000}px) rotate(${endX / 5}deg)`;
-                setTimeout(nextItem, 300);
+            let x = (e.type === 'touchend' ? e.changedTouches[0].clientX : e.clientX) - startX;
+            if (Math.abs(x) > 100) {
+                el.style.transition = 'transform 0.25s ease';
+                el.style.transform = `translateX(${x > 0 ? 400 : -400}px) rotate(${x > 0 ? 15 : -15}deg)`;
+                setTimeout(nextItem, 280);
             } else {
-                el.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                el.style.transition = 'transform 0.25s ease';
                 el.style.transform = 'translateX(0) rotate(0)';
             }
         };
@@ -257,25 +216,25 @@
 
     function nextItem() {
         currentIndex++;
-        if (currentIndex < uploadQueue.length) {
-            renderStack();
-            updateUI();
-        } else {
-            document.getElementById('resultArea').innerHTML = "<div class='card-panel' style='text-align:center;'><h2>✅ All Set!</h2><p>Your WhatsApp Status is going to look amazing.</p><button onclick='location.reload()' class='btn-primary' style='margin-top:20px;'>Upload More</button></div>";
+        if (currentIndex < uploadQueue.length) { renderStack(); updateUI(); }
+        else {
+            document.getElementById('resultArea').innerHTML = '<p class="result-header">Done</p><div class="card-details" style="text-align:center; padding: 48px 24px;"><div class="card-title" style="font-size: 1.25rem;">✅ All done!</div><div class="card-subtitle" style="margin-top: 8px;">No more items to post.</div></div>';
         }
     }
 
     function postCurrent() {
         const item = uploadQueue[currentIndex];
-        const text = encodeURIComponent(`Price: ${item.price}\n\nCheck it out here: ${item.link}`);
-        window.open(`https://wa.me/?text=${text}`);
+        window.open(`https://wa.me/?text=${encodeURIComponent('Price: ' + item.price + '\n' + item.link)}`);
         nextItem();
     }
 
     function updateUI() {
-        document.getElementById('queueText').innerText = `Product ${currentIndex + 1} of ${uploadQueue.length}`;
+        document.getElementById('queueCount').textContent = uploadQueue.length;
+        if (uploadQueue.length && currentIndex < uploadQueue.length) {
+            document.getElementById('cardTitle').textContent = uploadQueue[currentIndex].price;
+            document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} • Swipe to see next`;
+        }
     }
 </script>
-
 </body>
 </html>
