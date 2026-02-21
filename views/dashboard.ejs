@@ -411,19 +411,22 @@
             const dx = endX - drag.startX;
             const dt = Math.max(0.001, (Date.now() - drag.startTime) / 1000);
             const velocityPx = Math.abs(dx / dt);
-            const shouldDismiss = Math.abs(dx) > SWIPE_THRESHOLD || velocityPx > 350;
-            const direction = dx > 0 ? 1 : -1;
+            const shouldNavigate = Math.abs(dx) > SWIPE_THRESHOLD || velocityPx > 350;
+            const swipeLeft = dx < 0;
+            const canGoNext = currentIndex < uploadQueue.length - 1;
+            const canGoPrev = currentIndex > 0;
 
             drag.active = false;
             cancelAnimationFrame(drag.raf);
             el.classList.remove('dragging');
             el.style.willChange = '';
 
-            if (shouldDismiss) {
+            if (shouldNavigate && ((swipeLeft && canGoNext) || (!swipeLeft && canGoPrev))) {
+                const direction = swipeLeft ? -1 : 1;
                 const throwX = direction * Math.max(380, Math.abs(dx) * THROW_MULT);
                 el.style.transition = 'transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
                 setCardTransform(el, throwX, direction * 12);
-                setTimeout(nextItem, 300);
+                setTimeout(() => { if (swipeLeft) goToNext(); else goToPrev(); }, 300);
             } else {
                 el.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
                 setCardTransform(el, 0, 0);
@@ -441,11 +444,19 @@
         el.addEventListener('touchcancel', onEnd, { passive: true });
     }
 
-    function nextItem() {
-        currentIndex++;
-        if (currentIndex < uploadQueue.length) { renderStack(); updateUI(); }
-        else {
-            document.getElementById('resultArea').innerHTML = '<p class="result-header">Done</p><div class="card-details" style="text-align:center; padding: 56px 24px;"><div class="card-title" style="font-size: 1.35rem;">All done</div><div class="card-subtitle" style="margin-top: 10px;">No more items to post.</div></div>';
+    function goToNext() {
+        if (currentIndex < uploadQueue.length - 1) {
+            currentIndex++;
+            renderStack();
+            updateUI();
+        }
+    }
+
+    function goToPrev() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderStack();
+            updateUI();
         }
     }
 
@@ -486,7 +497,7 @@
         }
         if (uploadQueue.length && currentIndex < uploadQueue.length) {
             document.getElementById('cardTitle').textContent = uploadQueue[currentIndex].price;
-            document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} • Swipe to see next`;
+            document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} • Swipe left/right to browse`;
         }
     }
 </script>
