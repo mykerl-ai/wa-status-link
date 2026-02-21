@@ -58,47 +58,53 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 // 4. THE PERMANENT PRODUCT PAGE (The WhatsApp Scraper Target)
+// ... [Existing Cloudinary and Multer setup] ...
+
+// UPDATED: THE PERMANENT PRODUCT PAGE (Optimized for Square)
 app.get('/p/:publicId', (req, res) => {
     const { publicId } = req.params;
     const { price, type } = req.query;
 
-    // Transformation: Pad to 1.91:1 (1200x630) for WhatsApp Large Card
-    // If it's a video, Cloudinary automatically grabs a frame if we change extension to .jpg
+    // CHANGED: Square transformation (1200x1200px)
+    // b_auto:predominant_gradient adds a nice background based on the image colors
     const previewImage = cloudinary.url(publicId, {
         transformation: [
-            { width: 1200, height: 630, crop: "pad", background: "auto", fetch_format: "jpg" }
+            { width: 1200, height: 1200, crop: "pad", background: "auto:predominant_gradient", fetch_format: "jpg" }
         ]
     });
 
     const rawMediaUrl = cloudinary.url(publicId, { resource_type: type || "image" });
 
-    // The HTML returned contains the OG tags WhatsApp needs
     res.send(`
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Product Details</title>
+            <title>Price: ${price}</title>
             <meta property="og:title" content="Price: ${price}">
             <meta property="og:description" content="View product and chat with vendor">
+            
             <meta property="og:image" content="${previewImage}">
             <meta property="og:image:width" content="1200">
-            <meta property="og:image:height" content="630">
+            <meta property="og:image:height" content="1200">
+            
             <meta property="og:type" content="website">
             <meta name="twitter:card" content="summary_large_image">
         </head>
-        <body style="font-family:sans-serif; text-align:center; padding:20px;">
-            <h2>Product Price: ${price}</h2>
-            ${type === 'video' 
-                ? `<video controls style="width:100%; max-width:400px;"><source src="${rawMediaUrl}" type="video/mp4"></video>` 
-                : `<img src="${rawMediaUrl}" style="width:100%; max-width:400px;">`
-            }
-            <br><br>
-            <a href="https://wa.me/YOUR_VENDOR_NUMBER" style="background:#25D366; color:white; padding:15px 30px; text-decoration:none; border-radius:5px; font-weight:bold;">
-                Order via WhatsApp
-            </a>
+        <body style="font-family:sans-serif; text-align:center; padding:20px; background:#f0f2f5;">
+            <div style="max-width:500px; margin:auto; background:white; padding:20px; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
+                <h2>Price: ${price}</h2>
+                ${type === 'video' 
+                    ? `<video controls style="width:100%; border-radius:10px;"><source src="${rawMediaUrl}" type="video/mp4"></video>` 
+                    : `<img src="${rawMediaUrl}" style="width:100%; border-radius:10px;">`
+                }
+                <br><br>
+                <a href="https://wa.me/YOUR_VENDOR_NUMBER" style="display:block; background:#25D366; color:white; padding:15px; text-decoration:none; border-radius:8px; font-weight:bold;">
+                    Chat with Vendor
+                </a>
+            </div>
         </body>
         </html>
     `);
 });
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+app.listen(3000, () => console.log('Server running with MAX size cards!'));
