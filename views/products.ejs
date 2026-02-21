@@ -2,220 +2,238 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#ffffff">
-    <title>Products · AI Vendor Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#f5f5f7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Products</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #f0f2f5;
-            --bg-surface: #ffffff;
-            --bg-elevated: #f8f9fa;
-            --bg-card: #ffffff;
-            --border: #e5e7eb;
-            --text-primary: #1f2937;
-            --text-secondary: #4b5563;
-            --text-muted: #6b7280;
-            --copy-bg: #f3f4f6;
-            --copy-hover: #e5e7eb;
-            --shadow-lg: 0 24px 48px rgba(0,0,0,0.08);
-            --radius-sm: 12px;
-            --radius-md: 16px;
-            --radius-xl: 28px;
-            --radius-2xl: 32px;
+            --app-bg: #f5f5f7;
+            --surface: #ffffff;
+            --surface-secondary: #fafafa;
+            --separator: rgba(60,60,67,0.12);
+            --text: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #8e8e93;
+            --tint: #007aff;
+            --green: #34c759;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --tab-height: 56px;
+            --header-height: 52px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { height: 100%; }
         body {
-            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-deep);
-            color: var(--text-primary);
-            padding: env(safe-area-inset-top) 20px calc(env(safe-area-inset-bottom) + 20px);
-            display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; min-height: 100dvh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Outfit', sans-serif;
+            background: var(--app-bg);
+            color: var(--text);
+            min-height: 100%;
+            min-height: 100dvh;
+            padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom));
         }
-        .page-header {
-            width: 100%; max-width: 400px;
-            margin-bottom: 16px;
-            display: flex; align-items: center; justify-content: space-between;
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            height: calc(var(--header-height) + env(safe-area-inset-top));
+            padding-top: env(safe-area-inset-top);
+            padding-left: 20px;
+            padding-right: 20px;
+            background: var(--app-bg);
+            display: flex;
+            align-items: center;
+            border-bottom: 0.5px solid var(--separator);
         }
-        .page-header a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 500;
+        .app-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+        .app-content {
+            padding: 16px 20px 24px;
+            max-width: 480px;
+            margin: 0 auto;
         }
-        .page-header a:hover { color: var(--text-primary); }
-        .products-panel {
-            width: 100%; max-width: 400px;
-            background: var(--bg-surface);
-            border-radius: var(--radius-2xl);
-            border: 1px solid var(--border);
-            padding: 28px 20px 24px;
-            box-shadow: var(--shadow-lg);
-        }
-        .result-header {
-            text-transform: uppercase;
-            font-size: 10px;
-            letter-spacing: 0.12em;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
-        .result-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 20px; }
-        .progress-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; }
-        .progress-dots span {
-            width: 6px; height: 6px; border-radius: 50%;
-            background: var(--border);
-            transition: background 0.25s, transform 0.25s;
-        }
-        .progress-dots span.active { background: var(--text-primary); transform: scale(1.2); }
+        .result-label { font-size: 13px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.02em; margin-bottom: 4px; }
+        .result-count { font-size: 17px; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; }
+        .progress-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
+        .progress-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--separator); transition: all 0.2s; }
+        .progress-dots span.active { background: var(--tint); transform: scale(1.2); }
         .stack-wrapper {
-            position: relative;
-            height: 440px;
+            flex: 1;
+            min-height: min(440px, 60vh);
             display: flex;
             align-items: center;
             justify-content: center;
             touch-action: none;
         }
-        .stack-container { position: relative; width: 300px; height: 420px; }
+        .stack-container { position: relative; width: min(300px, 85vw); height: min(420px, 72vh); }
         .product-card {
             position: absolute;
             left: 0; top: 0;
-            width: 300px;
-            height: 420px;
-            background: var(--bg-card);
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--border);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+            width: 100%; height: 100%;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
             overflow: hidden;
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
-            transition: box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: box-shadow 0.2s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             will-change: transform;
         }
         .product-card.dragging { transition: none; cursor: grabbing; }
-        .product-card.stack-2 {
-            transform: translate3d(12px, 14px, 0) scale(0.97);
-            z-index: 0;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.1);
-        }
-        .product-card.stack-3 {
-            transform: translate3d(24px, 28px, 0) scale(0.94);
-            z-index: -1;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-        }
+        .product-card.stack-2 { transform: translate3d(10px, 12px, 0) scale(0.97); z-index: 0; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+        .product-card.stack-3 { transform: translate3d(20px, 24px, 0) scale(0.94); z-index: -1; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
         .product-card img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
         .card-badge {
-            position: absolute; bottom: 18px; left: 18px;
-            background: rgba(0,0,0,0.55);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            position: absolute; bottom: 16px; left: 16px;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
-            padding: 10px 16px;
-            border-radius: 24px;
+            padding: 8px 14px;
+            border-radius: 20px;
             font-size: 13px;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
-        .card-badge .check { color: #34d399; }
-        .card-details { margin-top: 22px; padding: 0 4px; }
-        .card-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.25; }
-        .card-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-top: 6px; }
-        .action-row { display: flex; gap: 12px; margin-top: 22px; }
-        .action-row button { flex: 1; margin-top: 0; }
-        button {
-            padding: 16px 20px;
-            border-radius: var(--radius-md);
+        .card-badge .check { color: #34d359; }
+        .card-details { margin-top: 16px; padding: 0 4px; }
+        .card-title { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+        .card-subtitle { font-size: 15px; color: var(--text-tertiary); margin-top: 4px; }
+        .action-row { display: flex; gap: 12px; margin-top: 16px; }
+        .action-row button {
+            flex: 1;
+            min-height: 50px;
+            padding: 14px 20px;
+            border-radius: var(--radius);
             border: none;
-            font-weight: 600; font-size: 1rem;
+            font-size: 17px;
+            font-weight: 600;
             cursor: pointer;
             font-family: inherit;
-            transition: transform 0.15s, box-shadow 0.2s;
+            transition: opacity 0.2s;
         }
-        button:active { transform: scale(0.98); }
-        .btn-copy {
-            background: var(--copy-bg);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-        .btn-copy:hover { background: var(--copy-hover); }
-        .wa-btn {
-            background: linear-gradient(135deg, #25D366 0%, #20bd5a 100%);
-            color: white;
-            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.3);
-        }
-        .wa-btn:hover { box-shadow: 0 6px 28px rgba(37, 211, 102, 0.4); }
+        .action-row button:active { opacity: 0.85; }
+        .btn-copy { background: var(--surface-secondary); color: var(--text); }
+        .wa-btn { background: var(--green); color: #fff; }
         .copy-toast {
             position: fixed;
-            bottom: calc(100px + env(safe-area-inset-bottom));
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--text-primary);
+            left: 20px; right: 20px;
+            bottom: calc(var(--tab-height) + env(safe-area-inset-bottom) + 16px);
+            background: var(--text);
             color: #fff;
-            padding: 14px 24px;
-            border-radius: 16px;
-            font-size: 14px;
+            padding: 14px 20px;
+            border-radius: var(--radius);
+            font-size: 15px;
             font-weight: 500;
-            box-shadow: var(--shadow-lg);
+            text-align: center;
             opacity: 0;
-            transition: opacity 0.25s ease, transform 0.25s ease;
+            transform: translateY(10px);
+            transition: opacity 0.25s, transform 0.25s;
             z-index: 100;
             pointer-events: none;
         }
-        .copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
-        .empty-state, .error-state {
-            text-align: center;
-            padding: 48px 24px;
-            color: var(--text-secondary);
-        }
-        .empty-state .card-title, .error-state .card-title { font-size: 1.2rem; margin-bottom: 8px; }
+        .copy-toast.show { opacity: 1; transform: translateY(0); }
+        .empty-state, .error-state { text-align: center; padding: 48px 24px; color: var(--text-secondary); }
+        .empty-state .card-title, .error-state .card-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
         .error-state .card-subtitle { color: #dc2626; }
+        .empty-state a {
+            display: inline-block;
+            margin-top: 24px;
+            padding: 14px 28px;
+            background: var(--tint);
+            color: #fff;
+            border-radius: var(--radius);
+            font-size: 17px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: calc(var(--tab-height) + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-top: 0.5px solid var(--separator);
+            display: flex;
+            z-index: 50;
+        }
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-tertiary);
+            font-size: 10px;
+            font-weight: 500;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tab-item.active { color: var(--tint); }
+        .tab-item svg { width: 26px; height: 26px; }
+        .tab-item.active svg { stroke: var(--tint); }
     </style>
 </head>
 <body>
 
-<div class="page-header">
-    <a href="/">← Studio</a>
-    <a href="/products">Products</a>
-</div>
+<header class="app-header">
+    <h1 class="app-title">Products</h1>
+</header>
 
-<div class="products-panel">
+<main class="app-content">
     <% if (typeof error !== 'undefined' && error) { %>
         <div class="error-state">
             <div class="card-title">Something went wrong</div>
             <div class="card-subtitle"><%= error %></div>
         </div>
     <% } else if (!products || products.length === 0) { %>
-        <p class="result-header">Products</p>
-        <p class="result-subtitle">• 0 items</p>
+        <p class="result-label">Products</p>
+        <p class="result-count">0 items</p>
         <div class="empty-state">
             <div class="card-title">No products yet</div>
             <div class="card-subtitle">Upload photos from the Studio to see them here.</div>
-            <a href="/" style="display:inline-block; margin-top:20px; padding:14px 24px; background: var(--copy-bg); border-radius: 12px; color: var(--text-primary); text-decoration: none; font-weight: 600;">Go to Studio</a>
+            <a href="/">Open Studio</a>
         </div>
     <% } else { %>
-        <p class="result-header">Products</p>
-        <p class="result-subtitle">• <span id="queueCount"><%= products.length %></span> items</p>
+        <p class="result-label">Products</p>
+        <p class="result-count"><span id="queueCount"><%= products.length %></span> items</p>
         <div class="progress-dots" id="progressDots"></div>
         <div class="stack-wrapper">
             <div class="stack-container" id="cardStack"></div>
         </div>
         <div class="card-details">
             <div class="card-title" id="cardTitle">—</div>
-            <div class="card-subtitle" id="cardSubtitle">Swipe to see next</div>
+            <div class="card-subtitle" id="cardSubtitle">Swipe left or right to browse</div>
         </div>
         <div class="action-row">
             <button type="button" class="btn-copy" onclick="copyCurrent()">Copy link</button>
-            <button type="button" class="wa-btn" onclick="postCurrent()">Share to WhatsApp</button>
+            <button type="button" class="wa-btn" onclick="postCurrent()">Share</button>
         </div>
-        <div class="copy-toast" id="copyToast">Link copied!</div>
+        <div class="copy-toast" id="copyToast">Link copied</div>
     <% } %>
-</div>
+</main>
+
+<nav class="tab-bar">
+    <a href="/" class="tab-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span>Studio</span>
+    </a>
+    <a href="/products" class="tab-item active" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>
+        <span>Products</span>
+    </a>
+</nav>
 
 <% if (products && products.length > 0) { %>
 <script>

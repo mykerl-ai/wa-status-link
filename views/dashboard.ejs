@@ -2,287 +2,423 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#ffffff">
-    <title>AI Vendor Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#f5f5f7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #f0f2f5;
-            --bg-surface: #ffffff;
-            --bg-elevated: #f8f9fa;
-            --bg-card: #ffffff;
-            --border: #e5e7eb;
-            --text-primary: #1f2937;
-            --text-secondary: #4b5563;
-            --text-muted: #6b7280;
-            --accent: #25D366;
-            --accent-dim: rgba(37, 211, 102, 0.15);
-            --copy-bg: #f3f4f6;
-            --copy-hover: #e5e7eb;
-            --shadow-lg: 0 24px 48px rgba(0,0,0,0.08);
-            --radius-sm: 12px;
-            --radius-md: 16px;
-            --radius-lg: 24px;
-            --radius-xl: 28px;
-            --radius-2xl: 32px;
+            --app-bg: #f5f5f7;
+            --surface: #ffffff;
+            --surface-secondary: #fafafa;
+            --separator: rgba(60,60,67,0.12);
+            --text: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #8e8e93;
+            --tint: #007aff;
+            --green: #34c759;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --tab-height: 56px;
+            --header-height: 52px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html { scroll-behavior: smooth; }
+        html { height: 100%; }
         body {
-            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-deep);
-            color: var(--text-primary);
-            padding: env(safe-area-inset-top) 20px calc(env(safe-area-inset-bottom) + 20px);
-            display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; min-height: 100dvh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Outfit', sans-serif;
+            background: var(--app-bg);
+            color: var(--text);
+            min-height: 100%;
+            min-height: 100dvh;
+            padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom));
         }
 
-        .card-panel {
-            background: var(--bg-surface);
-            padding: 28px 24px;
-            border-radius: var(--radius-2xl);
-            border: 1px solid var(--border);
-            width: 100%; max-width: 400px;
-            box-shadow: var(--shadow-lg);
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            height: calc(var(--header-height) + env(safe-area-inset-top));
+            padding-top: env(safe-area-inset-top);
+            padding-left: 20px;
+            padding-right: 20px;
+            background: var(--app-bg);
+            display: flex;
+            align-items: center;
+            border-bottom: 0.5px solid var(--separator);
         }
-        .card-panel h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; letter-spacing: -0.02em; }
-        .setting-group {
-            background: var(--bg-elevated);
-            padding: 18px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            margin-bottom: 14px;
+        .app-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
         }
-        .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .toggle-row span { font-weight: 500; color: var(--text-secondary); font-size: 0.95rem; }
-        label { font-weight: 500; font-size: 0.875rem; color: var(--text-secondary); display: block; margin-bottom: 6px; }
-        input[type="text"], select, input[type="file"] {
-            width: 100%; padding: 14px 16px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            background: var(--bg-card);
-            color: var(--text-primary);
-            font-size: 1rem;
-            margin-top: 4px;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        input:focus, select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
-        .price-row {
-            display: flex; align-items: center; gap: 14px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            padding: 10px 12px;
-            border-radius: var(--radius-sm);
-            margin-bottom: 10px;
-        }
-        .thumb-preview { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; background: var(--bg-elevated); }
-        .price-row input { margin: 0; flex: 1; background: transparent; border: none; }
 
-        button {
-            width: 100%; padding: 16px 20px;
-            border-radius: var(--radius-md);
+        .app-content {
+            padding: 16px 20px 24px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* iOS-style list groups */
+        .list-group {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .list-group-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            padding: 24px 20px 8px;
+        }
+        .list-row {
+            min-height: 44px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 0.5px solid var(--separator);
+        }
+        .list-row:last-child { border-bottom: none; }
+        .list-row label { font-size: 17px; color: var(--text); }
+        .list-row input[type="text"] {
+            flex: 1;
+            margin-left: 12px;
             border: none;
-            font-weight: 600; font-size: 1rem;
-            cursor: pointer;
-            margin-top: 12px;
-            font-family: inherit;
-            transition: transform 0.15s, opacity 0.15s, box-shadow 0.2s;
+            background: transparent;
+            font-size: 17px;
+            color: var(--text);
+            text-align: right;
+            outline: none;
         }
-        button:active { transform: scale(0.98); }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 20px rgba(37, 99, 235, 0.35); }
-        .btn-primary:hover { box-shadow: 0 6px 28px rgba(37, 99, 235, 0.45); }
-        #loading { display: none; text-align: center; padding: 24px; color: var(--text-secondary); font-weight: 500; }
+        .list-row input[type="text"]::placeholder { color: var(--text-tertiary); }
+        .switch-wrap {
+            width: 51px;
+            height: 31px;
+            border-radius: 31px;
+            background: var(--separator);
+            position: relative;
+            flex-shrink: 0;
+        }
+        .switch-wrap:has(input:checked) { background: var(--green); }
+        .switch-wrap input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+        .switch-wrap::after {
+            content: '';
+            position: absolute;
+            width: 27px;
+            height: 27px;
+            border-radius: 50%;
+            background: #fff;
+            top: 2px;
+            left: 2px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+            pointer-events: none;
+        }
+        .switch-wrap:has(input:checked)::after { transform: translateX(20px); }
+        .list-row .list-select {
+            width: auto;
+            min-width: 100px;
+            padding: 0 24px 0 0;
+            font-size: 17px;
+            color: var(--text);
+            background: transparent;
+            border: none;
+            outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238e8e93' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0 center;
+        }
+        .list-group .price-row {
+            border-bottom: 0.5px solid var(--separator);
+        }
+        .list-group .price-row:last-child { border-bottom: none; }
+        .price-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 44px;
+            padding: 10px 20px;
+        }
+        .thumb-preview {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--surface-secondary);
+        }
+        .price-row input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 17px;
+            outline: none;
+        }
+        .btn-primary {
+            display: block;
+            width: 100%;
+            min-height: 50px;
+            padding: 14px 20px;
+            margin-top: 8px;
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+            background: var(--tint);
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-family: inherit;
+            transition: opacity 0.2s;
+        }
+        .btn-primary:active { opacity: 0.85; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
 
-        /* Result area – premium card stack */
+        /* Result screen – full screen card stack */
         #resultArea {
             display: none;
-            width: 100%; max-width: 400px;
-            background: var(--bg-surface);
-            border-radius: var(--radius-2xl);
-            border: 1px solid var(--border);
-            padding: 28px 20px 24px;
-            box-shadow: var(--shadow-lg);
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            background: var(--app-bg);
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom));
         }
-        .result-header {
-            text-transform: uppercase;
-            font-size: 10px;
-            letter-spacing: 0.12em;
-            color: var(--text-muted);
-            margin-bottom: 4px;
+        #resultArea .app-content { flex: 1; display: flex; flex-direction: column; padding-top: 8px; max-width: 100%; }
+        .result-label {
+            font-size: 13px;
             font-weight: 600;
+            color: var(--text-tertiary);
+            letter-spacing: 0.02em;
+            margin-bottom: 4px;
         }
-        .result-subtitle { font-size: 1.05rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 20px; }
-        .progress-dots {
-            display: flex; justify-content: center; gap: 6px; margin-bottom: 20px;
-        }
+        .result-count { font-size: 17px; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; }
+        .progress-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
         .progress-dots span {
             width: 6px; height: 6px; border-radius: 50%;
-            background: var(--border);
-            transition: background 0.25s, transform 0.25s;
+            background: var(--separator);
+            transition: all 0.2s;
         }
-        .progress-dots span.active { background: var(--text-primary); transform: scale(1.2); }
+        .progress-dots span.active { background: var(--tint); transform: scale(1.2); }
         .stack-wrapper {
-            position: relative;
-            height: 440px;
+            flex: 1;
+            min-height: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             touch-action: none;
         }
-        .stack-container { position: relative; width: 300px; height: 420px; }
+        .stack-container { position: relative; width: min(300px, 85vw); height: min(420px, 72vh); }
         .product-card {
             position: absolute;
             left: 0; top: 0;
-            width: 300px;
-            height: 420px;
-            background: var(--bg-card);
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--border);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+            width: 100%;
+            height: 100%;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
             overflow: hidden;
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
-            transition: box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: box-shadow 0.2s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             will-change: transform;
         }
         .product-card.dragging { transition: none; cursor: grabbing; }
         .product-card.stack-2 {
-            transform: translate3d(12px, 14px, 0) scale(0.97);
+            transform: translate3d(10px, 12px, 0) scale(0.97);
             z-index: 0;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 16px rgba(0,0,0,0.06);
         }
         .product-card.stack-3 {
-            transform: translate3d(24px, 28px, 0) scale(0.94);
+            transform: translate3d(20px, 24px, 0) scale(0.94);
             z-index: -1;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
         }
         .product-card img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
         .card-badge {
-            position: absolute; bottom: 18px; left: 18px;
-            background: rgba(0,0,0,0.55);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            position: absolute; bottom: 16px; left: 16px;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
-            padding: 10px 16px;
-            border-radius: 24px;
+            padding: 8px 14px;
+            border-radius: 20px;
             font-size: 13px;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
-        .card-badge .check { color: #34d399; }
-        .card-details { margin-top: 22px; padding: 0 4px; }
-        .card-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.25; }
-        .card-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-top: 6px; }
-        .action-row { display: flex; gap: 12px; margin-top: 22px; }
-        .action-row button { flex: 1; margin-top: 0; }
-        .btn-copy {
-            background: var(--copy-bg);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-        .btn-copy:hover { background: var(--copy-hover); }
-        .wa-btn {
-            background: linear-gradient(135deg, #25D366 0%, #20bd5a 100%);
-            color: white;
-            padding: 16px 20px;
-            border-radius: var(--radius-md);
-            font-size: 1rem;
+        .card-badge .check { color: #34d359; }
+        .card-details { margin-top: 16px; padding: 0 4px; }
+        .card-title { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+        .card-subtitle { font-size: 15px; color: var(--text-tertiary); margin-top: 4px; }
+        .action-row { display: flex; gap: 12px; margin-top: 16px; }
+        .action-row button {
+            flex: 1;
+            min-height: 50px;
+            padding: 14px 20px;
+            border-radius: var(--radius);
+            border: none;
+            font-size: 17px;
             font-weight: 600;
-            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.3);
+            cursor: pointer;
+            font-family: inherit;
+            transition: opacity 0.2s;
         }
-        .wa-btn:hover { box-shadow: 0 6px 28px rgba(37, 211, 102, 0.4); }
+        .action-row button:active { opacity: 0.85; }
+        .btn-copy {
+            background: var(--surface-secondary);
+            color: var(--text);
+        }
+        .wa-btn { background: var(--green); color: #fff; }
         .copy-toast {
             position: fixed;
-            bottom: calc(100px + env(safe-area-inset-bottom));
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--text-primary);
+            left: 20px;
+            right: 20px;
+            bottom: calc(var(--tab-height) + env(safe-area-inset-bottom) + 16px);
+            background: var(--text);
             color: #fff;
-            padding: 14px 24px;
-            border-radius: 16px;
-            font-size: 14px;
+            padding: 14px 20px;
+            border-radius: var(--radius);
+            font-size: 15px;
             font-weight: 500;
-            box-shadow: var(--shadow-lg);
+            text-align: center;
             opacity: 0;
-            transition: opacity 0.25s ease, transform 0.25s ease;
+            transform: translateY(10px);
+            transition: opacity 0.25s, transform 0.25s;
             z-index: 100;
             pointer-events: none;
         }
-        .copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
-        .bottom-nav {
+        .copy-toast.show { opacity: 1; transform: translateY(0); }
+
+        /* Tab bar */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: calc(var(--tab-height) + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-top: 0.5px solid var(--separator);
             display: flex;
-            justify-content: center;
-            gap: 56px;
-            margin-top: 28px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
+            z-index: 50;
         }
-        .nav-icon { width: 26px; height: 26px; opacity: 0.4; color: var(--text-secondary); }
-        .nav-icon.active { opacity: 1; color: var(--text-primary); }
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-tertiary);
+            font-size: 10px;
+            font-weight: 500;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tab-item.active { color: var(--tint); }
+        .tab-item svg { width: 26px; height: 26px; }
+        .tab-item.active svg { stroke: var(--tint); }
     </style>
 </head>
 <body>
 
-<div class="card-panel">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
-        <h2 style="margin-bottom:0;">📸 AI Studio</h2>
-        <a href="/products" style="color:var(--text-muted); font-size:0.9rem; font-weight:500; text-decoration:none;">Products →</a>
-    </div>
+<header class="app-header">
+    <h1 class="app-title">Studio</h1>
+</header>
+
+<main class="app-content">
     <form id="bulkForm">
-        <div class="setting-group">
-            <div class="toggle-row">
-                <span>✨ Remove Background</span>
-                <input type="checkbox" id="removeBgToggle" checked style="width: 20px; height: 20px;">
+        <p class="list-group-title">Create</p>
+        <div class="list-group">
+            <div class="list-row">
+                <label>Remove background</label>
+                <span class="switch-wrap"><input type="checkbox" id="removeBgToggle" checked></span>
             </div>
-            <label>Watermark (Optional)</label>
-            <input type="text" id="watermarkInput" placeholder="e.g. @MyBrand">
+            <div class="list-row">
+                <label>Watermark</label>
+                <input type="text" id="watermarkInput" placeholder="Optional">
+            </div>
+            <div class="list-row">
+                <label>Background</label>
+                <select name="bgColor" id="bgColor" class="list-select">
+                    <option value="white">White</option>
+                    <option value="black">Black</option>
+                    <option value="#f8bbd0">Pink</option>
+                </select>
+            </div>
         </div>
-
-        <label>Theme Color</label>
-        <select name="bgColor" id="bgColor">
-            <option value="white">White</option>
-            <option value="black">Black</option>
-            <option value="#f8bbd0">Pink</option>
-        </select>
-
-        <label style="margin-top: 15px; display: block;">Select Photos</label>
-        <input type="file" id="fileInput" name="files" multiple required accept="image/*">
-        
-        <div id="priceInputs" style="margin-top: 15px;"></div>
-        
-        <button type="submit" class="btn-primary" id="uploadBtn">Generate Studio Links</button>
+        <p class="list-group-title">Photos</p>
+        <div class="list-group">
+            <label class="list-row" style="cursor:pointer;display:flex;">
+                <span style="font-size:17px;color:var(--text);">Select photos</span>
+                <input type="file" id="fileInput" name="files" multiple required accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;left:0;top:0;cursor:pointer;">
+            </label>
+            <div id="priceInputs"></div>
+        </div>
+        <button type="submit" class="btn-primary" id="uploadBtn">Generate links</button>
     </form>
-    <div id="loading">AI is processing...</div>
-</div>
+    <div id="loading">Processing…</div>
+</main>
 
 <div id="resultArea">
-    <p class="result-header">Your items</p>
-    <p class="result-subtitle" id="resultSubtitle">• <span id="queueCount">0</span> items</p>
-    <div class="progress-dots" id="progressDots"></div>
-    <div class="stack-wrapper">
-        <div class="stack-container" id="cardStack"></div>
-    </div>
-    <div class="card-details">
-        <div class="card-title" id="cardTitle">—</div>
-        <div class="card-subtitle" id="cardSubtitle">Swipe to see next</div>
-    </div>
-    <div class="action-row">
-        <button type="button" class="btn-copy" id="copyBtn" onclick="copyCurrent()">Copy link</button>
-        <button type="button" class="wa-btn" onclick="postCurrent()">Share to WhatsApp</button>
-    </div>
-    <div class="copy-toast" id="copyToast">Link copied!</div>
-    <div class="bottom-nav">
-        <svg class="nav-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-    </div>
+    <main class="app-content">
+        <p class="result-label">Your items</p>
+        <p class="result-count" id="resultSubtitle"><span id="queueCount">0</span> items</p>
+        <div class="progress-dots" id="progressDots"></div>
+        <div class="stack-wrapper">
+            <div class="stack-container" id="cardStack"></div>
+        </div>
+        <div class="card-details">
+            <div class="card-title" id="cardTitle">—</div>
+            <div class="card-subtitle" id="cardSubtitle">Swipe left or right to browse</div>
+        </div>
+        <div class="action-row">
+            <button type="button" class="btn-copy" onclick="copyCurrent()">Copy link</button>
+            <button type="button" class="wa-btn" onclick="postCurrent()">Share</button>
+        </div>
+    </main>
+    <div class="copy-toast" id="copyToast">Link copied</div>
 </div>
+
+<nav class="tab-bar">
+    <a href="/" class="tab-item active" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span>Studio</span>
+    </a>
+    <a href="/products" class="tab-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>
+        <span>Products</span>
+    </a>
+</nav>
 
 <script>
     let uploadQueue = [];
@@ -341,8 +477,8 @@
         if (data.success) {
             uploadQueue = data.items;
             currentIndex = 0;
-            document.querySelector('.card-panel').style.display = 'none';
-            document.getElementById('resultArea').style.display = 'block';
+            document.querySelector('body > main').style.display = 'none';
+            document.getElementById('resultArea').style.display = 'flex';
             renderStack();
         }
     };
@@ -466,7 +602,7 @@
         const text = item.price + '\n' + item.link;
         navigator.clipboard.writeText(text).then(() => {
             const toast = document.getElementById('copyToast');
-            toast.textContent = 'Link copied!';
+            toast.textContent = 'Link copied';
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 1800);
         }).catch(() => {
