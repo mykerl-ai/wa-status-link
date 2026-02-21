@@ -2,6 +2,8 @@ const express = require('express');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const app = express();
+const path = require('path');
+
 const upload = multer({ dest: 'uploads/' });
 
 cloudinary.config({ 
@@ -102,4 +104,5 @@ app.get('/p/:publicId', (req, res) => {
 
 
 app.listen(process.env.PORT || 3000);
+
 
