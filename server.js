@@ -28,39 +28,44 @@ app.get('/', (req, res) => {
 });
 
 // 5. UPLOAD ROUTE
-app.post('/upload', upload.single('file'), async (req, res) => {
+// Change this route in your server.js
+app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
     try {
-        const price = req.body.price || "Contact for Price";
+        const prices = Array.isArray(req.body.prices) ? req.body.prices : [req.body.prices];
+        const results = [];
 
-        // Eagerly process the AI Studio look so the link is ready immediately
-        const result = await cloudinary.uploader.upload(req.file.path, {
-            resource_type: "auto",
-            eager: [
-                { effect: "background_removal" },
-                { width: 1200, height: 1200, crop: "pad", background: "white", fetch_format: "jpg", quality: "auto" }
-            ],
-            eager_async: false 
-        });
-        
-        // Store status in memory
-        inventoryStatus[result.public_id] = { 
-            price: price, 
-            type: result.resource_type,
-            isSoldOut: false 
-        };
+        for (let i = 0; i < req.files.length; i++) {
+            const file = req.files[i];
+            const price = prices[i] || "Contact for Price";
 
-        const host = req.get('host');
-        const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
-        
-        // BAKE THE PRICE INTO THE URL for maximum reliability
-        const link = `${protocol}://${host}/p/${result.public_id}?price=${encodeURIComponent(price)}`;
-        
-        res.json({ success: true, link });
+            const result = await cloudinary.uploader.upload(file.path, {
+                resource_type: "auto",
+                eager: [
+                    { effect: "background_removal" },
+                    { width: 1200, height: 1200, crop: "pad", background: "white", fetch_format: "jpg", quality: "auto" }
+                ],
+                eager_async: false 
+            });
+
+            inventoryStatus[result.public_id] = { 
+                price: price, 
+                type: result.resource_type,
+                isSoldOut: false 
+            };
+
+            const host = req.get('host');
+            const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
+            const link = `${protocol}://${host}/p/${result.public_id}?price=${encodeURIComponent(price)}`;
+            
+            results.push({ link, price });
+        }
+
+        res.json({ success: true, items: results });
     } catch (err) {
-        console.error("Upload Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
+
 
 // 6. TOGGLE SOLD OUT ROUTE
 app.post('/toggle-sold-out', (req, res) => {
@@ -114,3 +119,4 @@ app.get('/p/:publicId', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server live on port ${PORT}`));
+
