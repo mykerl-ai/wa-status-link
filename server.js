@@ -1,13 +1,12 @@
 const express = require('express');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const path = require('path'); // FIX: Added path module
+const path = require('path');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
 // 1. CLOUDINARY CONFIG
-// It is best practice to use environment variables for Render
 cloudinary.config({ 
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'YOUR_CLOUD_NAME', 
     api_key: process.env.CLOUDINARY_API_KEY || 'YOUR_API_KEY', 
@@ -16,12 +15,11 @@ cloudinary.config({
 
 // 2. EXPRESS CONFIG
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views')); // FIX: Ensures correct folder mapping on Render
+app.set('views', path.join(__dirname, 'views'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 3. MOCK DATABASE
-// This stores the price and status so it's not lost in the URL
+// 3. MOCK DATABASE (For tracking "Sold Out" status)
 let inventoryStatus = {}; 
 
 // 4. DASHBOARD ROUTE
@@ -29,36 +27,33 @@ app.get('/', (req, res) => {
     res.render('dashboard', { inventory: inventoryStatus });
 });
 
-// 5. UPLOAD ROUTE (With "Eager" AI Processing)
+// 5. UPLOAD ROUTE
 app.post('/upload', upload.single('file'), async (req, res) => {
     try {
         const price = req.body.price || "Contact for Price";
 
-        // FIX: We do the heavy AI work NOW, before giving the link to the vendor.
-        // This prevents the WhatsApp bot from timing out.
+        // Eagerly process the AI Studio look so the link is ready immediately
         const result = await cloudinary.uploader.upload(req.file.path, {
             resource_type: "auto",
             eager: [
                 { effect: "background_removal" },
-                { effect: "gen_background:prompt_minimalist professional studio floor with soft shadows" },
-                { width: 1200, height: 1200, crop: "pad", background: "gen_fill", fetch_format: "jpg", quality: "auto" }
+                { width: 1200, height: 1200, crop: "pad", background: "white", fetch_format: "jpg", quality: "auto" }
             ],
-            eager_async: false // Forces server to wait until AI is 100% finished
+            eager_async: false 
         });
         
-        // Save data to our memory "database"
+        // Store status in memory
         inventoryStatus[result.public_id] = { 
             price: price, 
             type: result.resource_type,
-            isSoldOut: false,
-            // We save the exact URL of the instantly-ready AI image
-            eagerUrl: result.eager ? result.eager[0].secure_url : result.secure_url 
+            isSoldOut: false 
         };
 
-        // Determine the correct protocol for Render vs Localhost
         const host = req.get('host');
         const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
-        const link = `${protocol}://${host}/p/${result.public_id}`;
+        
+        // BAKE THE PRICE INTO THE URL for maximum reliability
+        const link = `${protocol}://${host}/p/${result.public_id}?price=${encodeURIComponent(price)}`;
         
         res.json({ success: true, link });
     } catch (err) {
@@ -67,7 +62,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// 6. TOGGLE SOLD OUT ROUTE (For the Dashboard)
+// 6. TOGGLE SOLD OUT ROUTE
 app.post('/toggle-sold-out', (req, res) => {
     const { id } = req.body;
     if (inventoryStatus[id]) {
@@ -78,49 +73,44 @@ app.post('/toggle-sold-out', (req, res) => {
     }
 });
 
-// 7. THE WHATSAPP PREVIEW ROUTE
+// 7. THE WHATSAPP PREVIEW ROUTE (Picks Price from Link)
 app.get('/p/:publicId', (req, res) => {
     const { publicId } = req.params;
     
-    // Fetch item from our database, or provide fallback
-    const item = inventoryStatus[publicId] || { 
-        price: "Price upon Request", 
-        isSoldOut: false, 
-        type: 'image',
-        eagerUrl: cloudinary.url(publicId, { width: 1200, height: 1200, crop: "pad", fetch_format: "jpg" })
-    };
+    // PRIORITY 1: Get price from the URL query string (?price=...)
+    // PRIORITY 2: Get price from our internal memory
+    const urlPrice = req.query.price;
+    const dbItem = inventoryStatus[publicId];
+    
+    const displayPrice = urlPrice || (dbItem ? dbItem.price : "Price upon Request");
+    const isSoldOut = dbItem ? dbItem.isSoldOut : false;
+    const itemType = dbItem ? dbItem.type : (req.query.type || 'image');
 
-    let previewUrl = item.eagerUrl;
+    // Build the AI Studio Preview URL
+    // We use the same transformation used in 'eager' so Cloudinary serves the cached file instantly
+    let previewUrl = cloudinary.url(publicId, {
+        resource_type: itemType === 'video' ? 'video' : 'image',
+        transformation: [
+            { effect: "background_removal" },
+            { width: 1200, height: 1200, crop: "pad", background: "white" },
+            // If Sold Out, add the Red Badge on the fly
+            ...(isSoldOut ? [{
+                overlay: { font_family: "Arial", font_size: 140, font_weight: "bold", text: "SOLD OUT" },
+                color: "white", background: "red", flags: "layer_apply", gravity: "center", angle: -30, opacity: 80
+            }] : []),
+            { fetch_format: "jpg", quality: "auto" }
+        ]
+    });
 
-    // If marked "Sold Out", we dynamically stamp the image
-    if (item.isSoldOut) {
-        previewUrl = cloudinary.url(publicId, {
-            resource_type: item.type === 'video' ? 'video' : 'image',
-            transformation: [
-                // We re-apply the base config so Cloudinary uses the cached AI result instantly
-                { effect: "background_removal" },
-                { effect: "gen_background:prompt_minimalist professional studio floor with soft shadows" },
-                { width: 1200, height: 1200, crop: "pad", background: "gen_fill" },
-                // Apply the Red SOLD OUT badge
-                {
-                    overlay: { font_family: "Arial", font_size: 140, font_weight: "bold", text: "SOLD OUT" },
-                    color: "white", background: "red", flags: "layer_apply", gravity: "center", angle: -30, opacity: 80
-                },
-                { fetch_format: "jpg", quality: "auto" }
-            ]
-        });
-    }
+    const rawMediaUrl = cloudinary.url(publicId, { resource_type: itemType });
 
-    const rawMediaUrl = cloudinary.url(publicId, { resource_type: item.type });
-
-    // Renders the views/preview.ejs file
     res.render('preview', { 
         previewImage: previewUrl, 
-        item: item, 
+        item: { price: displayPrice, isSoldOut: isSoldOut, type: itemType }, 
         rawMediaUrl: rawMediaUrl, 
         publicId: publicId 
     });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`App running beautifully on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server live on port ${PORT}`));
