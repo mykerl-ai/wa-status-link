@@ -161,5 +161,6 @@ app.get('/p/:publicId', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Studio live on port ${PORT}`));
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => console.log(`Studio live on ${HOST}:${PORT}`));
 
