@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#f5f5f7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title><%= item.price %> · Product</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --app-bg: #f5f5f7;
+            --surface: #ffffff;
+            --surface-secondary: #f5f5f7;
+            --separator: rgba(60,60,67,0.08);
+            --text: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #8e8e93;
+            --tint: #007aff;
+            --green: #34c759;
+            --radius: 20px;
+            --radius-lg: 20px;
+            --header-height: 48px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { height: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Outfit', sans-serif;
+            background: var(--app-bg);
+            color: var(--text);
+            min-height: 100%;
+            min-height: 100dvh;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            height: calc(var(--header-height) + env(safe-area-inset-top));
+            padding-top: env(safe-area-inset-top);
+            padding-left: 20px;
+            padding-right: 20px;
+            background: var(--app-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 0.5px solid var(--separator);
+        }
+        .app-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+        .app-content { padding: 16px 20px 24px; max-width: 480px; margin: 0 auto; }
+        .media-wrap {
+            width: 100%;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: var(--surface);
+            box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+            margin-bottom: 16px;
+        }
+        .media-wrap img,
+        .media-wrap video {
+            display: block;
+            width: 100%;
+            height: auto;
+            vertical-align: top;
+        }
+        .media-wrap video { max-height: 70vh; object-fit: contain; }
+        .product-price {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+        }
+        .action-row {
+            display: flex;
+            gap: 10px;
+        }
+        .action-row button {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 18px;
+            min-height: 48px;
+            border-radius: var(--radius);
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: opacity 0.2s;
+        }
+        .action-row button .icon { width: 18px; height: 18px; }
+        .action-row button:active { opacity: 0.85; }
+        .btn-copy { background: var(--surface-secondary); color: var(--text); }
+        .wa-btn { background: var(--green); color: #fff; }
+        .copy-toast {
+            position: fixed;
+            left: 20px;
+            right: 20px;
+            bottom: calc(24px + env(safe-area-inset-bottom));
+            background: var(--text);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.25s, transform 0.25s;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .copy-toast.show { opacity: 1; transform: translateY(0); }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--tint);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            margin-top: 20px;
+        }
+        .back-link .icon { width: 18px; height: 18px; }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <h1 class="app-title">Product</h1>
+</header>
+
+<main class="app-content">
+    <div class="media-wrap">
+        <% if (item.type === 'video') { %>
+            <video controls playsinline><source src="<%= rawMediaUrl %>" type="video/mp4"></video>
+        <% } else { %>
+            <img src="<%= rawMediaUrl %>" alt="Product">
+        <% } %>
+    </div>
+    <div class="product-price"><%= item.price %></div>
+    <div class="action-row">
+        <button type="button" class="btn-copy" id="copyBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copy link
+        </button>
+        <button type="button" class="wa-btn" id="shareBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            Share
+        </button>
+    </div>
+    <div class="copy-toast" id="copyToast">Link copied</div>
+    <a href="/" class="back-link">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Open Studio
+    </a>
+</main>
+
+<script>
+    (function() {
+        var data = <%- JSON.stringify({ link: canonicalLink, price: item.price }) %>;
+        var shareText = data.price + '\n' + data.link;
+
+        document.getElementById('copyBtn').onclick = function() {
+            navigator.clipboard.writeText(shareText).then(function() {
+                var toast = document.getElementById('copyToast');
+                toast.textContent = 'Link copied';
+                toast.classList.add('show');
+                setTimeout(function() { toast.classList.remove('show'); }, 1800);
+            });
+        };
+
+        document.getElementById('shareBtn').onclick = function() {
+            window.open('https://wa.me/?text=' + encodeURIComponent(shareText));
+        };
+    })();
+</script>
+</body>
+</html>

@@ -135,7 +135,13 @@ app.get('/products', async (req, res) => {
     }
 });
 
-// 7. PREVIEW ROUTE (For WhatsApp Scrapers)
+// 7. PREVIEW ROUTE (Crawlers → preview for OG; browsers → premium app view)
+function isPreviewBot(req) {
+    const ua = (req.get('User-Agent') || '').toLowerCase();
+    const bots = ['whatsapp', 'telegram', 'slack', 'discord', 'facebookexternalhit', 'facebot', 'twitter', 'linkedin', 'pinterest', 'snapchat', 'line-poker', 'line-sheriff', 'googlebot', 'bingbot'];
+    return bots.some(bot => ua.includes(bot));
+}
+
 app.get('/p/:publicId', (req, res) => {
     const { publicId } = req.params;
     const price = req.query.price || "Contact for Price";
@@ -145,19 +151,30 @@ app.get('/p/:publicId', (req, res) => {
     const previewUrl = cloudinary.url(publicId, {
         resource_type: item.type === 'video' ? 'video' : 'image',
         transformation: [
-            // Matches the same vertical format as upload
             ...(req.query.rm === 'true' ? [{ effect: "background_removal" }] : []),
             { width: 800, height: 1200, crop: "pad", background: bg },
             { quality: "auto:best", fetch_format: "jpg", dpr: "2.0" }
         ]
     });
 
-    res.render('preview', { 
-        previewImage: previewUrl, 
-        item: { price, isSoldOut: item.isSoldOut, type: item.type }, 
-        rawMediaUrl: cloudinary.url(publicId, { resource_type: item.type }),
-        publicId 
-    });
+    const rawMediaUrl = cloudinary.url(publicId, { resource_type: item.type });
+    const host = req.get('host');
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const canonicalLink = `${protocol}://${host}/p/${publicId}?price=${encodeURIComponent(price)}&bg=${encodeURIComponent(bg)}`;
+
+    const payload = {
+        previewImage: previewUrl,
+        item: { price, isSoldOut: item.isSoldOut, type: item.type },
+        rawMediaUrl,
+        publicId,
+        canonicalLink
+    };
+
+    if (isPreviewBot(req)) {
+        res.render('preview', payload);
+    } else {
+        res.render('preview-app', payload);
+    }
 });
 
 const PORT = process.env.PORT || 3000;
