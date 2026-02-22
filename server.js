@@ -26,12 +26,17 @@ app.use(express.urlencoded({ extended: true }));
 
 let inventoryStatus = {}; 
 
-// 3. DASHBOARD ROUTE
+// 3. HEALTH CHECK
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
+// 4. DASHBOARD ROUTE
 app.get('/', (req, res) => {
     res.render('dashboard', { inventory: inventoryStatus });
 });
 
-// 4. BULK UPLOAD ROUTE (With Optional BG Removal & Watermark)
+// 5. BULK UPLOAD ROUTE (With Optional BG Removal & Watermark)
 app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
     try {
         const prices = Array.isArray(req.body.prices) ? req.body.prices : [req.body.prices];
@@ -106,7 +111,7 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
     }
 });
 
-// 5. PRODUCTS PAGE (from Supabase)
+// 6. PRODUCTS PAGE (from Supabase)
 app.get('/products', async (req, res) => {
     if (!supabase) {
         return res.render('products', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.' });
@@ -130,7 +135,7 @@ app.get('/products', async (req, res) => {
     }
 });
 
-// 6. PREVIEW ROUTE (For WhatsApp Scrapers)
+// 7. PREVIEW ROUTE (For WhatsApp Scrapers)
 app.get('/p/:publicId', (req, res) => {
     const { publicId } = req.params;
     const price = req.query.price || "Contact for Price";
