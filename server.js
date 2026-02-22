@@ -3,6 +3,8 @@ const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const { PaystackService } = require('./lib/PaystackService');
+const { OrderService } = require('./lib/OrderService');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -10,6 +12,11 @@ const upload = multer({ dest: 'uploads/' });
 const supabaseUrl = process.env.SUPABASE_URL || 'https://jfsqdzfeqgfmmkfzhrmq.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || '';
 const supabase = supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+const paystackSecret = process.env.PAYSTACK_SECRET_KEY || '';
+const paystackPublic = process.env.PAYSTACK_PUBLIC_KEY || '';
+const paystackService = paystackSecret ? new PaystackService(paystackSecret) : null;
+const orderService = supabase ? new OrderService(supabase) : null;
 
 // 1. CLOUDINARY CONFIG
 cloudinary.config({ 
@@ -174,6 +181,72 @@ app.get('/p/:publicId', (req, res) => {
         res.render('preview', payload);
     } else {
         res.render('preview-app', payload);
+    }
+});
+
+// 8. CART PAGE
+app.get('/cart', (req, res) => {
+    res.render('cart', { paystackPublicKey: paystackPublic });
+});
+
+// 9. PAYMENT API (OOP: PaystackService + OrderService)
+app.post('/api/payment/initialize', async (req, res) => {
+    if (!paystackService || !orderService) {
+        return res.status(503).json({ success: false, error: 'Payment not configured' });
+    }
+    try {
+        const { email, items } = req.body;
+        if (!email || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, error: 'Email and items required' });
+        }
+        const totalKobo = items.reduce((sum, it) => sum + (Number(it.amountKobo) || 0), 0);
+        if (totalKobo < 100) {
+            return res.status(400).json({ success: false, error: 'Minimum amount is 100 kobo (₦1)' });
+        }
+        const reference = 'ord_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+        const { authorizationUrl, accessCode } = await paystackService.initializeTransaction(
+            email,
+            totalKobo,
+            reference,
+            { order_reference: reference }
+        );
+        await orderService.create(reference, email, totalKobo, items);
+        res.json({
+            success: true,
+            reference,
+            authorizationUrl,
+            accessCode,
+            amountKobo: totalKobo,
+            publicKey: paystackPublic
+        });
+    } catch (err) {
+        console.error('Payment init error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.get('/api/payment/verify', async (req, res) => {
+    if (!paystackService || !orderService) {
+        return res.status(503).json({ success: false, error: 'Payment not configured' });
+    }
+    const reference = req.query.reference;
+    if (!reference) {
+        return res.status(400).json({ success: false, error: 'Reference required' });
+    }
+    try {
+        const tx = await paystackService.verifyTransaction(reference);
+        if (tx.status === 'success') {
+            await orderService.updateStatus(reference, 'paid');
+        }
+        res.json({
+            success: tx.status === 'success',
+            reference: tx.reference,
+            status: tx.status,
+            order: tx.status === 'success' ? await orderService.findByReference(reference) : null
+        });
+    } catch (err) {
+        console.error('Verify error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 

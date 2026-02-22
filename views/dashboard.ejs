@@ -288,6 +288,9 @@
         .action-row button:active { opacity: 0.85; }
         .btn-copy { background: var(--surface-secondary); color: var(--text); }
         .wa-btn { background: var(--green); color: #fff; }
+        .btn-cart { background: var(--tint); color: #fff; }
+        .tab-item-wrap { position: relative; }
+        .cart-tab-badge { position: absolute; top: -2px; right: 50%; margin-right: -28px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 11px; font-weight: 600; color: #fff; background: var(--tint); border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; }
         .copy-toast {
             position: fixed;
             left: 20px; right: 20px;
@@ -410,6 +413,10 @@
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                 Share
             </button>
+            <button type="button" class="btn-cart" onclick="addCurrentToCart()">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                Add to cart
+            </button>
         </div>
     </main>
     <div class="copy-toast" id="copyToast">Link copied</div>
@@ -423,6 +430,11 @@
     <a href="/products" class="tab-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>
         <span>Products</span>
+    </a>
+    <a href="/cart" class="tab-item tab-item-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+        <span>Cart</span>
+        <span class="cart-tab-badge" id="cartTabBadge" style="display:none;">0</span>
     </a>
 </nav>
 
@@ -654,6 +666,46 @@
             document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} • Swipe left/right to browse`;
         }
     }
+
+    function parsePriceToKobo(priceStr) {
+        if (!priceStr || typeof priceStr !== 'string') return 0;
+        const num = ('' + priceStr).replace(/[^\d.]/g, '').trim();
+        if (!num) return 0;
+        const n = parseFloat(num);
+        return isNaN(n) ? 0 : Math.round(n * 100);
+    }
+    function addToCart(item) {
+        const raw = localStorage.getItem('wa_cart');
+        const items = raw ? JSON.parse(raw) : [];
+        const amountKobo = item.amountKobo != null ? Number(item.amountKobo) : parsePriceToKobo(item.price);
+        items.push({
+            id: item.id || item.link || Math.random().toString(36).slice(2),
+            price: item.price || 'Contact for price',
+            amountKobo: amountKobo,
+            link: item.link || '',
+            previewUrl: item.previewUrl || ''
+        });
+        localStorage.setItem('wa_cart', JSON.stringify(items));
+    }
+    function updateCartBadge() {
+        const el = document.getElementById('cartTabBadge');
+        if (!el) return;
+        const n = (JSON.parse(localStorage.getItem('wa_cart') || '[]')).length;
+        el.textContent = n;
+        el.style.display = n ? 'inline-flex' : 'none';
+    }
+    function addCurrentToCart() {
+        if (currentIndex >= uploadQueue.length) return;
+        const item = uploadQueue[currentIndex];
+        addToCart(item);
+        updateCartBadge();
+        const toast = document.getElementById('copyToast');
+        toast.textContent = 'Added to cart';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    updateCartBadge();
 </script>
 </body>
 </html>
