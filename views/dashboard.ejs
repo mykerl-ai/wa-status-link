@@ -12,14 +12,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --app-bg: #f5f5f7;
+            --app-bg: #d7cede;
             --surface: #ffffff;
-            --surface-secondary: #f5f5f7;
-            --separator: rgba(60,60,67,0.08);
-            --text: #1d1d1f;
-            --text-secondary: #6e6e73;
-            --text-tertiary: #8e8e93;
-            --tint: #007aff;
+            --surface-secondary: #f2eff6;
+            --separator: rgba(44,30,66,0.12);
+            --text: #201a2b;
+            --text-secondary: #6b607b;
+            --text-tertiary: #8f86a0;
+            --tint: #5d4af2;
             --green: #34c759;
             --radius: 20px;
             --radius-sm: 12px;
@@ -52,7 +52,7 @@
             border-bottom: 0.5px solid var(--separator);
         }
         .app-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
-        .app-content { padding: 12px 16px 20px; max-width: 480px; margin: 0 auto; }
+        .app-content { padding: 14px 16px 20px; max-width: 480px; margin: 0 auto; }
         .list-group {
             background: var(--surface);
             border-radius: var(--radius-lg);
@@ -212,35 +212,32 @@
         .result-label {
             font-size: 11px;
             font-weight: 600;
-            color: rgba(255,255,255,0.92);
+            color: var(--text-tertiary);
             letter-spacing: 0.04em;
             margin-bottom: 2px;
-            text-shadow: 0 1px 10px rgba(0,0,0,0.45);
         }
         .result-count {
             font-size: 15px;
             font-weight: 600;
-            color: rgba(255,255,255,0.92);
-            margin-bottom: 10px;
-            text-shadow: 0 1px 10px rgba(0,0,0,0.45);
+            color: var(--text-secondary);
+            margin-bottom: 8px;
         }
         .progress-dots { display: flex; justify-content: flex-start; gap: 5px; margin-bottom: 0; }
-        .progress-dots span { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.35); transition: all 0.2s; }
-        .progress-dots span.active { background: #fff; transform: scale(1.2); }
+        .progress-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(93,74,242,0.25); transition: all 0.2s; }
+        .progress-dots span.active { background: var(--tint); transform: scale(1.15); }
         .stack-wrapper {
             position: relative;
-            height: 100%;
+            width: 100%;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            padding: 12px;
+            padding: 0 8px 110px;
             touch-action: pan-y;
         }
         .stack-container {
             position: relative;
-            width: min(560px, calc(100vw - 24px));
-            height: 100%;
-            max-height: 100%;
+            width: min(286px, calc(100vw - 72px));
+            aspect-ratio: 9 / 16;
             overflow: visible;
         }
         .card-stack-layers { position: absolute; inset: 0; overflow: visible; }
@@ -250,28 +247,37 @@
             width: 100%;
             height: 100%;
             background: var(--surface);
-            border-radius: 28px;
-            box-shadow: 0 16px 34px rgba(0,0,0,0.18);
+            border-radius: 18px;
+            border: 1px solid rgba(44,30,66,0.08);
+            box-shadow: 0 16px 28px rgba(42,28,66,0.17);
             overflow: hidden;
             touch-action: pan-y;
             user-select: none;
             -webkit-user-select: none;
-            transition: box-shadow 0.24s ease, transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+            transition: box-shadow 0.24s ease, transform 0.3s cubic-bezier(0.2, 0.9, 0.2, 1);
             will-change: transform;
         }
-        .product-card.dragging { transition: none; cursor: grabbing; box-shadow: 0 24px 44px rgba(0,0,0,0.24); }
+        .product-card.dragging { transition: none; cursor: grabbing; box-shadow: 0 20px 34px rgba(42,28,66,0.24); }
         .product-card.stack-2 {
-            transform: translate3d(24px, 12px, 0) scale(0.95);
+            transform: translate3d(18px, 10px, 0) scale(0.97);
             z-index: 0;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 16px rgba(42,28,66,0.14);
         }
         .product-card.stack-3 {
-            transform: translate3d(42px, 24px, 0) scale(0.9);
+            transform: translate3d(32px, 18px, 0) scale(0.94);
             z-index: -1;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+            box-shadow: 0 6px 12px rgba(42,28,66,0.1);
         }
         .product-card.stack-2, .product-card.stack-3 { transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s ease; }
-        .product-card img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+        .product-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            display: block;
+            pointer-events: none;
+            background: #f3f0f7;
+        }
         .stack-overlay {
             position: absolute;
             inset: 0;
@@ -279,56 +285,54 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 16px;
+            padding: 0;
             pointer-events: none;
-            border-radius: 28px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.04) 56%, rgba(0,0,0,0.56) 100%);
+            border-radius: 18px;
+            background: transparent;
         }
-        .stack-header { pointer-events: none; }
-        .stack-footer { pointer-events: none; }
+        .stack-header { pointer-events: none; transform: translateY(-42px); padding-left: 2px; }
+        .stack-footer { pointer-events: auto; transform: translateY(calc(100% + 12px)); }
         .card-badge {
-            position: absolute; top: 16px; right: 16px;
-            background: rgba(0,0,0,0.45);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 14px;
-            font-size: 12px;
+            position: absolute; top: 12px; right: 12px;
+            background: rgba(255,255,255,0.95);
+            color: var(--text-secondary);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 11px;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
+            box-shadow: 0 4px 10px rgba(42,28,66,0.12);
         }
         .card-badge .check { color: #34d359; }
-        .card-details { margin-top: 12px; padding: 0 2px; pointer-events: none; }
-        .card-title { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.02em; text-shadow: 0 2px 14px rgba(0,0,0,0.45); }
-        .card-subtitle { font-size: 13px; color: rgba(255,255,255,0.88); margin-top: 4px; text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
-        .action-row { display: flex; gap: 10px; margin-top: 12px; }
+        .card-details { margin-top: 0; padding: 0 2px; pointer-events: none; }
+        .card-title { font-size: 40px; line-height: 1; font-weight: 700; color: var(--text); letter-spacing: -0.03em; }
+        .card-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+        .action-row { display: flex; gap: 8px; margin-top: 10px; }
         .action-row button {
             flex: 1;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            padding: 10px 16px;
-            min-height: 42px;
-            border-radius: var(--radius);
-            border: 1px solid rgba(255,255,255,0.28);
-            font-size: 14px;
+            padding: 9px 10px;
+            min-height: 40px;
+            border-radius: 14px;
+            border: 1px solid rgba(44,30,66,0.12);
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
-            transition: opacity 0.2s;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            transition: transform 0.16s ease, opacity 0.2s;
             pointer-events: auto;
+            box-shadow: 0 3px 8px rgba(42,28,66,0.1);
         }
         .action-row button .icon { width: 16px; height: 16px; }
-        .action-row button:active { opacity: 0.85; }
-        .btn-copy { background: rgba(255,255,255,0.2); color: #fff; }
-        .wa-btn { background: rgba(52,199,89,0.88); color: #fff; border-color: rgba(52,199,89,0.95); }
-        .btn-cart { background: rgba(0,122,255,0.88); color: #fff; border-color: rgba(0,122,255,0.95); }
+        .action-row button:active { opacity: 0.88; transform: translateY(1px); }
+        .btn-copy { background: #fff; color: var(--text-secondary); }
+        .wa-btn { background: #2cc56a; color: #fff; border-color: #2cc56a; }
+        .btn-cart { background: #2d7df5; color: #fff; border-color: #2d7df5; }
         .tab-item-wrap { position: relative; }
         .cart-tab-badge { position: absolute; top: -2px; right: 50%; margin-right: -28px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 11px; font-weight: 600; color: #fff; background: var(--tint); border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; }
         .copy-toast {
@@ -458,7 +462,7 @@
                         <div class="stack-footer">
                             <div class="card-details">
                                 <div class="card-title" id="cardTitle">&mdash;</div>
-                                <div class="card-subtitle" id="cardSubtitle">Swipe to browse. Tap Status Next to post in bulk.</div>
+                                <div class="card-subtitle" id="cardSubtitle">Scroll or swipe to browse. Tap Status Next to post in bulk.</div>
                             </div>
                             <div class="action-row">
                                 <button type="button" class="btn-copy" onclick="copyCurrent()">
@@ -514,10 +518,12 @@
         raf: null
     };
     const backCards = { second: null, third: null };
-    const SWIPE_THRESHOLD = 72;
-    const VELOCITY_THRESHOLD = 0.45; // px/ms
-    const THROW_MULT = 1.45;
-    const MAX_ROTATE = 16;
+    let wheelLock = false;
+    let scrollNavBound = false;
+    const SWIPE_THRESHOLD = 58;
+    const VELOCITY_THRESHOLD = 0.3; // px/ms
+    const THROW_MULT = 1.2;
+    const MAX_ROTATE = 10;
 
     function clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
@@ -615,18 +621,34 @@
         const p = clamp(progress, 0, 1);
 
         if (backCards.second) {
-            const x = 24 - (p * 14);
-            const y = 12 - (p * 7);
-            const scale = 0.95 + (p * 0.035);
+            const x = 18 - (p * 12);
+            const y = 10 - (p * 6);
+            const scale = 0.97 + (p * 0.02);
             backCards.second.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
         }
 
         if (backCards.third) {
-            const x = 42 - (p * 18);
-            const y = 24 - (p * 11);
-            const scale = 0.9 + (p * 0.045);
+            const x = 32 - (p * 16);
+            const y = 18 - (p * 10);
+            const scale = 0.94 + (p * 0.03);
             backCards.third.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
         }
+    }
+
+    function bindScrollNav() {
+        if (scrollNavBound) return;
+        const host = document.querySelector('.stack-wrapper');
+        if (!host) return;
+        host.addEventListener('wheel', function(e) {
+            if (Math.abs(e.deltaY) < 12) return;
+            e.preventDefault();
+            if (wheelLock) return;
+            wheelLock = true;
+            if (e.deltaY > 0) goToNext();
+            else goToPrev();
+            setTimeout(function() { wheelLock = false; }, 190);
+        }, { passive: false });
+        scrollNavBound = true;
     }
 
     function renderStack() {
@@ -644,11 +666,11 @@
             card.style.zIndex = total - 1 - i;
             if (i === 1) backCards.second = card;
             if (i === 2) backCards.third = card;
-            const badge = isFront ? `<div class="card-badge"><span class="check">&#10003;</span> ${escapeHtml(item.price)}</div>` : '';
-            card.innerHTML = `<img src="${escapeHtml(item.previewUrl)}" alt="">${badge}`;
+            card.innerHTML = `<img src="${escapeHtml(item.previewUrl)}" alt="">`;
             if (isFront) initSwipe(card);
             container.appendChild(card);
         });
+        bindScrollNav();
         updateBackCards(0);
         updateUI();
     }
@@ -671,11 +693,11 @@
         function tick() {
             if (!drag.active || !el.parentNode) return;
             const targetX = drag.currentX - drag.startX;
-            drag.renderedX += (targetX - drag.renderedX) * 0.22;
+            drag.renderedX += (targetX - drag.renderedX) * 0.34;
             const x = drag.renderedX;
             const rotate = clamp(x / 11, -MAX_ROTATE, MAX_ROTATE);
             setCardTransform(el, x, rotate);
-            updateBackCards(clamp(Math.abs(x) / (el.offsetWidth * 0.42), 0, 1));
+            updateBackCards(clamp(Math.abs(x) / (el.offsetWidth * 0.36), 0, 1));
             drag.raf = requestAnimationFrame(tick);
         }
 
@@ -731,12 +753,12 @@
             if (shouldNavigate && ((swipeLeft && canGoNext) || (!swipeLeft && canGoPrev))) {
                 const direction = swipeLeft ? -1 : 1;
                 const throwX = direction * Math.max(window.innerWidth * 0.92, Math.abs(dx) * THROW_MULT);
-                el.style.transition = 'transform 0.34s cubic-bezier(0.22, 1, 0.36, 1)';
+                el.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.9, 0.2, 1)';
                 setCardTransform(el, throwX, direction * MAX_ROTATE);
                 updateBackCards(1);
-                setTimeout(() => { if (swipeLeft) goToNext(); else goToPrev(); }, 280);
+                setTimeout(() => { if (swipeLeft) goToNext(); else goToPrev(); }, 210);
             } else {
-                el.style.transition = 'transform 0.42s cubic-bezier(0.16, 1, 0.3, 1)';
+                el.style.transition = 'transform 0.34s cubic-bezier(0.16, 1, 0.3, 1)';
                 setCardTransform(el, 0, 0);
                 updateBackCards(0);
             }
@@ -834,7 +856,7 @@
         }
         if (uploadQueue.length && currentIndex < uploadQueue.length) {
             document.getElementById('cardTitle').textContent = uploadQueue[currentIndex].price;
-            document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} - Swipe to browse - Tap Status Next for bulk posting`;
+            document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} - Scroll or swipe to browse - Tap Status Next`;
         }
     }
 
