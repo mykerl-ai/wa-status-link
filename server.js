@@ -148,13 +148,48 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
     }
 });
 
+function withFreshPreviewUrl(product) {
+    if (!product || !product.link) return product;
+
+    try {
+        const parsedLink = new URL(product.link, 'http://localhost');
+        const pathParts = parsedLink.pathname.split('/').filter(Boolean);
+        const publicId = pathParts[0] === 'p' ? decodeURIComponent(pathParts.slice(1).join('/')) : '';
+        if (!publicId) return product;
+
+        const mediaType = (String(parsedLink.searchParams.get('mt') || 'image').toLowerCase() === 'video') ? 'video' : 'image';
+        if (mediaType === 'video') {
+            return {
+                ...product,
+                previewUrl: buildVideoAnimatedPreviewUrl(cloudinary, publicId)
+            };
+        }
+
+        const bgColor = parsedLink.searchParams.get('bg') || 'white';
+        const removeBg = parsedLink.searchParams.get('rm') === 'true';
+        const badgeLabel = normalizeBadgeLabel(parsedLink.searchParams.get('badge') || '');
+
+        return {
+            ...product,
+            previewUrl: buildImagePreviewUrl(cloudinary, {
+                publicId,
+                bgColor,
+                removeBg,
+                badgeLabel
+            })
+        };
+    } catch {
+        return product;
+    }
+}
+
 // 6. PRODUCTS PAGE (from Supabase via ProductService)
 app.get('/products', async (req, res) => {
     if (!productService) {
         return res.render('products', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.' });
     }
     try {
-        const products = await productService.list();
+        const products = (await productService.list()).map(withFreshPreviewUrl);
         res.render('products', { products, error: null });
     } catch (err) {
         console.error('Products fetch error:', err);
