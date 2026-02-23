@@ -3,6 +3,7 @@ const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const path = require('path');
 const dotenv = require('dotenv');
+const cookieParser = require('cookie-parser');
 
 const { createClient } = require('@supabase/supabase-js');
 const { PaystackService } = require('./lib/PaystackService');
@@ -45,6 +46,33 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+const AUTH_COOKIE = 'sb-access-token';
+const COOKIE_OPTS = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000, path: '/' };
+
+async function loadAuth(req, res, next) {
+    req.user = null;
+    req.role = null;
+    const token = req.cookies[AUTH_COOKIE];
+    if (!token || !supabase) return next();
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (error || !user) return next();
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+        req.user = { id: user.id, email: user.email || '' };
+        req.role = profile?.role || 'customer';
+    } catch (e) { /* ignore */ }
+    next();
+}
+
+function requireOwner(req, res, next) {
+    if (!req.user) return res.redirect('/login?next=' + encodeURIComponent(req.originalUrl || '/'));
+    if (req.role !== 'owner') return res.redirect('/products');
+    next();
+}
+
+app.use(loadAuth);
 
 let inventoryStatus = {};
 
@@ -59,13 +87,68 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
-// 4. DASHBOARD ROUTE
-app.get('/', (req, res) => {
-    res.render('dashboard', { inventory: inventoryStatus });
+// 4. AUTH ROUTES
+app.get('/login', (req, res) => {
+    if (req.user && req.role === 'owner') return res.redirect('/');
+    if (req.user) return res.redirect('/products');
+    res.render('login', { user: req.user, role: req.role, error: null, message: req.query.message || null, next: req.query.next || '/' });
 });
 
-// 5. BULK UPLOAD ROUTE (Image/video + AI improve + optional overlays)
-app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
+app.post('/login', express.urlencoded({ extended: true }), async (req, res) => {
+    const nextUrl = req.body.next || (req.role === 'owner' ? '/' : '/products');
+    if (!supabase) return res.render('login', { user: null, role: null, error: 'Auth not configured', next: nextUrl });
+    const email = (req.body.email || '').trim();
+    const password = req.body.password || '';
+    if (!email || !password) return res.render('login', { user: null, role: null, error: 'Email and password required', next: nextUrl });
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) return res.render('login', { user: null, role: null, error: error.message, next: nextUrl });
+        res.cookie(AUTH_COOKIE, data.session.access_token, COOKIE_OPTS);
+        return res.redirect(nextUrl);
+    } catch (e) {
+        return res.render('login', { user: null, role: null, error: e.message || 'Login failed', next: nextUrl });
+    }
+});
+
+app.get('/signup', (req, res) => {
+    if (req.user && req.role === 'owner') return res.redirect('/');
+    if (req.user) return res.redirect('/products');
+    res.render('signup', { user: req.user, role: req.role, error: null });
+});
+
+app.post('/signup', express.urlencoded({ extended: true }), async (req, res) => {
+    if (!supabase) return res.render('signup', { user: null, role: null, error: 'Auth not configured' });
+    const email = (req.body.email || '').trim();
+    const password = req.body.password || '';
+    const displayName = (req.body.displayName || '').trim();
+    if (!email || !password) return res.render('signup', { user: null, role: null, error: 'Email and password required' });
+    if (password.length < 6) return res.render('signup', { user: null, role: null, error: 'Password must be at least 6 characters' });
+    try {
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { display_name: displayName } } });
+        if (error) return res.render('signup', { user: null, role: null, error: error.message });
+        const { data: existing } = await supabase.from('profiles').select('id').limit(1);
+        const isFirstUser = !existing || existing.length === 0;
+        const role = isFirstUser ? 'owner' : 'customer';
+        await supabase.from('profiles').upsert({ id: data.user.id, role, display_name: displayName || null }, { onConflict: 'id' });
+        res.cookie(AUTH_COOKIE, data.session?.access_token, COOKIE_OPTS);
+        return res.redirect(data.session ? (role === 'owner' ? '/' : '/products') : '/login?message=Confirm your email to sign in');
+    } catch (e) {
+        return res.render('signup', { user: null, role: null, error: e.message || 'Sign up failed' });
+    }
+});
+
+app.post('/logout', (req, res) => {
+    res.clearCookie(AUTH_COOKIE, { path: '/' });
+    res.redirect(req.query.next || '/products');
+});
+
+// 5. DASHBOARD ROUTE (owner only)
+app.get('/', requireOwner, (req, res) => {
+    res.render('dashboard', { inventory: inventoryStatus, user: req.user, role: req.role });
+});
+
+// 6. BULK UPLOAD ROUTE (owner only)
+app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, res) => {
     try {
         const prices = Array.isArray(req.body.prices) ? req.body.prices : [req.body.prices];
         const bgColor = req.body.bgColor || "white";
@@ -196,28 +279,28 @@ function withFreshPreviewUrl(product) {
 // 6. PRODUCTS PAGE (from Supabase via ProductService)
 app.get('/products', async (req, res) => {
     if (!productService) {
-        return res.render('products', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.' });
+        return res.render('products', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.', user: req.user, role: req.role });
     }
     try {
         const products = (await productService.list()).map(withFreshPreviewUrl);
-        res.render('products', { products, error: null });
+        res.render('products', { products, error: null, user: req.user, role: req.role });
     } catch (err) {
         console.error('Products fetch error:', err);
-        res.render('products', { products: [], error: err.message });
+        res.render('products', { products: [], error: err.message, user: req.user, role: req.role });
     }
 });
 
 // Products — simple card grid (for comparison)
 app.get('/products/simple', async (req, res) => {
     if (!productService) {
-        return res.render('products-simple', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.' });
+        return res.render('products-simple', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.', user: req.user, role: req.role });
     }
     try {
         const products = (await productService.list()).map(withFreshPreviewUrl);
-        res.render('products-simple', { products, error: null });
+        res.render('products-simple', { products, error: null, user: req.user, role: req.role });
     } catch (err) {
         console.error('Products fetch error:', err);
-        res.render('products-simple', { products: [], error: err.message });
+        res.render('products-simple', { products: [], error: err.message, user: req.user, role: req.role });
     }
 });
 
@@ -283,13 +366,13 @@ app.get('/p/:publicId', async (req, res) => {
     if (isPreviewBot(req)) {
         res.render('preview', payload);
     } else {
-        res.render('preview-app', payload);
+        res.render('preview-app', { ...payload, user: req.user, role: req.role });
     }
 });
 
 // 8. CART PAGE
 app.get('/cart', (req, res) => {
-    res.render('cart', { paystackPublicKey: paystackPublic });
+    res.render('cart', { paystackPublicKey: paystackPublic, user: req.user, role: req.role });
 });
 
 // 9. PAYMENT API (OOP: PaystackService + OrderService)
@@ -298,7 +381,11 @@ app.post('/api/payment/initialize', async (req, res) => {
         return res.status(503).json({ success: false, error: 'Payment not configured' });
     }
     try {
-        const { email, items } = req.body;
+        let email = req.body.email;
+        if (req.user && req.user.email) {
+            email = req.user.email;
+        }
+        const items = req.body.items;
         if (!email || !Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ success: false, error: 'Email and items required' });
         }
