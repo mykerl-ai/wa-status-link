@@ -46,7 +46,13 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-let inventoryStatus = {}; 
+let inventoryStatus = {};
+
+function normalizeSingleField(val) {
+    if (val == null) return '';
+    const one = Array.isArray(val) ? val[0] : val;
+    return String(one).trim();
+}
 
 // 3. HEALTH CHECK
 app.get('/health', (req, res) => {
@@ -66,6 +72,9 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
         const shouldRemoveBg = String(req.body.removeBg) === 'true';
         const watermarkText = req.body.watermarkText ? String(req.body.watermarkText).trim() : "";
         const badgeLabel = normalizeBadgeLabel(req.body.badgeLabel);
+        const size = normalizeSingleField(req.body.size);
+        const color = normalizeSingleField(req.body.color);
+        const qty = normalizeSingleField(req.body.qty);
         const results = [];
 
         for (let i = 0; i < req.files.length; i++) {
@@ -73,7 +82,6 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
             const price = prices[i] || "Contact for Price";
             const mediaType = (file.mimetype || '').startsWith('video/') ? 'video' : 'image';
             const uploadOptions = { resource_type: mediaType };
-
             if (mediaType === 'image') {
                 uploadOptions.transformation = buildImageTransformations({
                     shouldRemoveBg,
@@ -88,9 +96,7 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
                 ? buildVideoAnimatedPreviewUrl(cloudinary, result.public_id)
                 : buildImagePreviewUrl(cloudinary, {
                     publicId: result.public_id,
-                    bgColor,
-                    removeBg: shouldRemoveBg,
-                    badgeLabel
+                    bgColor
                 });
 
             inventoryStatus[result.public_id] = {
@@ -117,7 +123,8 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
                 link,
                 price,
                 previewUrl,
-                mediaType
+                mediaType,
+                badgeLabel
             });
 
             // Save product to Supabase (skipped if SUPABASE_ANON_KEY / SUPABASE_SERVICE_KEY not set)
@@ -128,11 +135,16 @@ app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
                         price,
                         link,
                         previewUrl,
-                        bgColor
+                        bgColor,
+                        badgeLabel,
+                        size,
+                        color,
+                        qty
                     });
                 } catch (dbErr) {
                     console.error('Product save error:', dbErr.message, dbErr.code || '', dbErr.details || '');
                     if (!res.locals.dbError) res.locals.dbError = dbErr.message;
+                    if (dbErr.code === '42703') console.error('Tip: run ALTER TABLE in supabase-schema.sql to add size, color, qty columns.');
                 }
             }
         }
@@ -166,17 +178,15 @@ function withFreshPreviewUrl(product) {
         }
 
         const bgColor = parsedLink.searchParams.get('bg') || 'white';
-        const removeBg = parsedLink.searchParams.get('rm') === 'true';
-        const badgeLabel = normalizeBadgeLabel(parsedLink.searchParams.get('badge') || '');
+        const badgeLabel = normalizeBadgeLabel(product.badgeLabel || parsedLink.searchParams.get('badge') || '');
 
         return {
             ...product,
             previewUrl: buildImagePreviewUrl(cloudinary, {
                 publicId,
-                bgColor,
-                removeBg,
-                badgeLabel
-            })
+                bgColor
+            }),
+            badgeLabel
         };
     } catch {
         return product;
@@ -197,6 +207,20 @@ app.get('/products', async (req, res) => {
     }
 });
 
+// Products — simple card grid (for comparison)
+app.get('/products/simple', async (req, res) => {
+    if (!productService) {
+        return res.render('products-simple', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.' });
+    }
+    try {
+        const products = (await productService.list()).map(withFreshPreviewUrl);
+        res.render('products-simple', { products, error: null });
+    } catch (err) {
+        console.error('Products fetch error:', err);
+        res.render('products-simple', { products: [], error: err.message });
+    }
+});
+
 // 7. PREVIEW ROUTE (Crawlers → preview for OG; browsers → premium app view)
 function isPreviewBot(req) {
     const ua = (req.get('User-Agent') || '').toLowerCase();
@@ -204,7 +228,7 @@ function isPreviewBot(req) {
     return bots.some(bot => ua.includes(bot));
 }
 
-app.get('/p/:publicId', (req, res) => {
+app.get('/p/:publicId', async (req, res) => {
     const { publicId } = req.params;
     const price = req.query.price || "Contact for Price";
     const bg = req.query.bg || "white";
@@ -217,9 +241,7 @@ app.get('/p/:publicId', (req, res) => {
         ? buildVideoOgPreviewUrl(cloudinary, publicId)
         : buildImagePreviewUrl(cloudinary, {
             publicId,
-            bgColor: bg,
-            removeBg: shouldRemoveBg,
-            badgeLabel
+            bgColor: bg
         });
 
     const rawMediaUrl = cloudinary.url(publicId, { resource_type: mediaType });
@@ -236,9 +258,23 @@ app.get('/p/:publicId', (req, res) => {
         mediaType
     });
 
+    const item = { price, isSoldOut: statusItem.isSoldOut, type: mediaType, badgeLabel, size: '', color: '', qty: '' };
+    if (productService) {
+        try {
+            const product = await productService.getByPublicId(publicId);
+            if (product) {
+                item.size = product.size || '';
+                item.color = product.color || '';
+                item.qty = product.qty || '';
+            }
+        } catch (e) {
+            // keep defaults
+        }
+    }
+
     const payload = {
         previewImage: previewUrl,
-        item: { price, isSoldOut: statusItem.isSoldOut, type: mediaType },
+        item,
         rawMediaUrl,
         publicId,
         canonicalLink

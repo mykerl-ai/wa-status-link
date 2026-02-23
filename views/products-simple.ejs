@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#d7cede">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Products — Simple</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --page-bg: #d7cede;
+            --app-bg: #d7cede;
+            --surface: #f8f6fb;
+            --surface-secondary: #f0ecf7;
+            --separator: rgba(53,38,78,0.12);
+            --text: #271f35;
+            --text-secondary: #5c5369;
+            --text-tertiary: #7a6f8a;
+            --tint: #6a59eb;
+            --radius: 16px;
+            --tab-height: 56px;
+            --header-height: 48px;
+            --image-placeholder: #E8E8E8;
+            --label-border: #BECAD3;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { height: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Outfit', sans-serif;
+            background: var(--page-bg);
+            color: var(--text);
+            min-height: 100%;
+            min-height: 100dvh;
+            padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom));
+            -webkit-font-smoothing: antialiased;
+        }
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            height: calc(var(--header-height) + env(safe-area-inset-top));
+            padding-top: env(safe-area-inset-top);
+            padding-left: 20px;
+            padding-right: 20px;
+            background: var(--app-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--separator);
+        }
+        .app-title { font-size: 17px; font-weight: 600; letter-spacing: -0.03em; color: var(--text); }
+        .view-switch {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--tint);
+            text-decoration: none;
+        }
+        .view-switch:hover { text-decoration: underline; }
+        .app-content {
+            width: 100%;
+            padding: 20px 16px 24px;
+            max-width: 100vw;
+            margin: 0 auto;
+        }
+        .result-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .result-count {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        .product-card-simple {
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid rgba(53,38,78,0.08);
+            box-shadow: 0 12px 32px rgba(41,27,64,0.15), 0 4px 12px rgba(41,27,64,0.08);
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .product-card-simple:active { opacity: 0.97; }
+        .card-image-link { display: block; text-decoration: none; color: inherit; }
+        .card-image-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            background: var(--image-placeholder);
+            overflow: hidden;
+        }
+        .card-image-wrap img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+        .card-label-tag {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid var(--label-border);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text);
+            z-index: 2;
+        }
+        .card-label-tag.is-empty { display: none; }
+        .card-heart {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 22px;
+            height: 22px;
+            color: var(--text);
+            opacity: 0.9;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .card-details {
+            padding: 12px 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .card-prices {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .card-price-current {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+        .card-price-original {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            text-decoration: line-through;
+        }
+        .card-price-original:empty { display: none; }
+        .card-meta {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .card-meta span + span::before { content: ' · '; color: var(--text-tertiary); }
+        .card-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .card-actions button {
+            min-width: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 8px;
+            min-height: 44px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.54);
+            background: linear-gradient(140deg, rgba(255,255,255,0.4), rgba(255,255,255,0.2));
+            backdrop-filter: blur(18px) saturate(165%);
+            -webkit-backdrop-filter: blur(18px) saturate(165%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.58), 0 6px 16px rgba(41,27,64,0.1);
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
+            font-family: inherit;
+            color: var(--text);
+            transition: transform 0.16s ease, opacity 0.2s ease;
+        }
+        .card-actions button:active { opacity: 0.9; transform: scale(0.98); }
+        .card-actions button.btn-copy { color: #594f6a; }
+        .card-actions button.wa-btn { color: #1a7641; background: linear-gradient(145deg, rgba(56,203,102,0.34), rgba(255,255,255,0.22)); border-color: rgba(56,203,102,0.4); }
+        .card-actions button.btn-cart { color: #4636bb; background: linear-gradient(145deg, rgba(106,89,235,0.34), rgba(255,255,255,0.2)); border-color: rgba(106,89,235,0.42); }
+        .card-actions button .icon { width: 14px; height: 14px; flex-shrink: 0; }
+        .empty-state, .error-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-secondary);
+        }
+        .empty-state .card-title, .error-state .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        .empty-state a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+            padding: 12px 24px;
+            background: var(--tint);
+            color: #fff;
+            border-radius: var(--radius);
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 4px 14px rgba(106,89,235,0.3);
+        }
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: calc(var(--tab-height) + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            background: rgba(248,246,251,0.94);
+            backdrop-filter: saturate(180%) blur(16px);
+            -webkit-backdrop-filter: saturate(180%) blur(16px);
+            border-top: 1px solid var(--separator);
+            display: flex;
+            z-index: 50;
+        }
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: 500;
+            min-height: 48px;
+        }
+        .tab-item.active { color: var(--tint); font-weight: 600; }
+        .tab-item svg { width: 22px; height: 22px; }
+        .tab-item.active svg { stroke: var(--tint); }
+        .copy-toast {
+            position: fixed;
+            left: 24px;
+            right: 24px;
+            bottom: calc(var(--tab-height) + env(safe-area-inset-bottom) + 16px);
+            background: var(--text);
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.25s, transform 0.25s;
+            z-index: 100;
+            pointer-events: none;
+            box-shadow: 0 4px 20px rgba(41,27,64,0.2);
+        }
+        .copy-toast.show { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <h1 class="app-title">Products — Simple</h1>
+    <a href="/products" class="view-switch">Stack view</a>
+</header>
+
+<main class="app-content">
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error-state">
+            <div class="card-title">Something went wrong</div>
+            <p><%= error %></p>
+        </div>
+    <% } else if (!products || products.length === 0) { %>
+        <p class="result-label">Products</p>
+        <p class="result-count">0 items</p>
+        <div class="empty-state">
+            <div class="card-title">No products yet</div>
+            <p>Upload photos from the Studio to see them here.</p>
+            <a href="/">Open Studio</a>
+        </div>
+    <% } else { %>
+        <p class="result-label">Products</p>
+        <p class="result-count"><%= products.length %> items</p>
+        <div class="card-grid">
+            <% products.forEach(function(p, idx) { %>
+                <article class="product-card-simple" data-idx="<%= idx %>">
+                    <a href="<%= p.link %>" target="_blank" rel="noopener" class="card-image-link">
+                        <div class="card-image-wrap">
+                            <img src="<%= p.previewUrl %>" alt="" loading="lazy">
+                            <span class="card-label-tag <%= (p.badgeLabel || '').trim() ? '' : 'is-empty' %>"><%= (p.badgeLabel || 'Label').trim() || 'Label' %></span>
+                            <svg class="card-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20.8 5.6a5 5 0 00-7.1 0L12 7.3l-1.7-1.7a5 5 0 00-7.1 7.1L12 21.5l8.8-8.8a5 5 0 000-7.1z"/>
+                            </svg>
+                        </div>
+                    </a>
+                    <div class="card-details">
+                        <div class="card-prices">
+                            <span class="card-price-current"><%= p.price || 'Contact' %></span>
+                            <span class="card-price-original"></span>
+                        </div>
+                        <div class="card-meta">
+                            <% if (p.size || p.color || p.qty) { %>
+                                <% if (p.size) { %><span>Size: <%= (p.size || '').split(',')[0].trim() %></span><% } %>
+                                <% if (p.color) { %><span>Color: <%= (p.color || '').split(',')[0].trim() %></span><% } %>
+                                <% if (p.qty) { %><span>Qty: <%= (p.qty || '').split(',')[0].trim() %></span><% } %>
+                            <% } else { %>
+                                <span class="card-meta-empty">—</span>
+                            <% } %>
+                        </div>
+                        <div class="card-actions">
+                            <button type="button" class="btn-copy" data-idx="<%= idx %>" title="Copy link">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                Copy
+                            </button>
+                            <button type="button" class="wa-btn" data-idx="<%= idx %>" title="Share">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                Share
+                            </button>
+                            <button type="button" class="btn-cart" data-idx="<%= idx %>" title="Add to cart">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                                Cart
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            <% }); %>
+        </div>
+        <div class="copy-toast" id="copyToast">Link copied</div>
+    <% } %>
+</main>
+
+<nav class="tab-bar">
+    <a href="/" class="tab-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span>Studio</span></a>
+    <a href="/products" class="tab-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg><span>Products</span></a>
+    <a href="/products/simple" class="tab-item active" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Simple</span></a>
+    <a href="/cart" class="tab-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg><span>Cart</span></a>
+</nav>
+
+<% if (products && products.length > 0) { %>
+<script>
+(function() {
+    const productsList = <%- JSON.stringify(products) %>;
+    const toast = document.getElementById('copyToast');
+
+    function parsePriceToKobo(priceStr) {
+        if (!priceStr || typeof priceStr !== 'string') return 0;
+        const num = ('' + priceStr).replace(/[^\d.]/g, '').trim();
+        if (!num) return 0;
+        const n = parseFloat(num);
+        return isNaN(n) ? 0 : Math.round(n * 100);
+    }
+
+    function addToCart(item) {
+        const raw = localStorage.getItem('wa_cart');
+        const items = raw ? JSON.parse(raw) : [];
+        const amountKobo = item.amountKobo != null ? Number(item.amountKobo) : parsePriceToKobo(item.price);
+        items.push({
+            id: item.id || item.link || Math.random().toString(36).slice(2),
+            price: item.price || 'Contact for price',
+            amountKobo: amountKobo,
+            link: item.link || '',
+            previewUrl: item.previewUrl || ''
+        });
+        localStorage.setItem('wa_cart', JSON.stringify(items));
+    }
+
+    document.querySelectorAll('.product-card-simple').forEach(function(card) {
+        const idx = parseInt(card.getAttribute('data-idx'), 10);
+        const item = productsList[idx];
+        if (!item) return;
+
+        const copyBtn = card.querySelector('button.btn-copy');
+        const shareBtn = card.querySelector('button.wa-btn');
+        const cartBtn = card.querySelector('button.btn-cart');
+
+        if (copyBtn) {
+            copyBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const text = item.price + '\n' + item.link;
+                navigator.clipboard.writeText(text).then(function() {
+                    toast.textContent = 'Link copied!';
+                    toast.classList.add('show');
+                    setTimeout(function() { toast.classList.remove('show'); }, 1800);
+                }).catch(function() {
+                    toast.textContent = 'Copy failed';
+                    toast.classList.add('show');
+                    setTimeout(function() { toast.classList.remove('show'); }, 1800);
+                });
+            });
+        }
+        if (shareBtn) {
+            shareBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const text = 'Price: ' + item.price + '\n' + item.link;
+                if (navigator.share) {
+                    navigator.share({ text: text }).then(function() {
+                        toast.textContent = 'Shared';
+                        toast.classList.add('show');
+                        setTimeout(function() { toast.classList.remove('show'); }, 1800);
+                    }).catch(function(err) { if (err.name !== 'AbortError') { toast.textContent = 'Share failed'; toast.classList.add('show'); setTimeout(function() { toast.classList.remove('show'); }, 1800); } });
+                } else {
+                    window.open('https://wa.me/?text=' + encodeURIComponent(text));
+                    toast.textContent = 'Opened share';
+                    toast.classList.add('show');
+                    setTimeout(function() { toast.classList.remove('show'); }, 1800);
+                }
+            });
+        }
+        if (cartBtn) {
+            cartBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addToCart(item);
+                toast.textContent = 'Added to cart';
+                toast.classList.add('show');
+                setTimeout(function() { toast.classList.remove('show'); }, 1800);
+            });
+        }
+    });
+})();
+</script>
+<% } %>
+
+</body>
+</html>

@@ -24,7 +24,7 @@ test('normalizeBadgeLabel keeps allowed values only', () => {
     assert.equal(normalizeBadgeLabel(''), '');
 });
 
-test('buildImageTransformations includes improve, badge, and watermark', () => {
+test('buildImageTransformations stays non-destructive and includes optional overlay', () => {
     const transformations = buildImageTransformations({
         shouldRemoveBg: true,
         bgColor: 'white',
@@ -34,14 +34,9 @@ test('buildImageTransformations includes improve, badge, and watermark', () => {
 
     assert.equal(transformations[0].effect, 'background_removal');
     assert.equal(transformations[1].effect, 'improve');
-    assert.equal(transformations[2].crop, 'pad');
-    assert.ok(transformations.some((step) => step.overlay && step.overlay.text === 'SALE'));
     assert.ok(transformations.some((step) => step.overlay && step.overlay.text === 'MY SHOP'));
-    assert.deepEqual(transformations[transformations.length - 1], {
-        quality: 'auto:best',
-        fetch_format: 'auto',
-        dpr: '2.0'
-    });
+    assert.equal(transformations.some((step) => step.crop === 'limit'), false);
+    assert.equal(transformations.some((step) => step.effect === 'trim:12'), false);
 });
 
 test('buildProductLink appends media and optional params', () => {
@@ -86,7 +81,7 @@ test('buildVideoOgPreviewUrl uses jpg fallback options', () => {
     assert.equal(payload.options.transformation[0].start_offset, '1');
 });
 
-test('buildImagePreviewUrl includes improve, optional background removal, and badge overlay', () => {
+test('buildImagePreviewUrl applies delivery-only limit framing and quality', () => {
     const cloudinary = mockCloudinary();
     const raw = buildImagePreviewUrl(cloudinary, {
         publicId: 'img_1',
@@ -98,15 +93,14 @@ test('buildImagePreviewUrl includes improve, optional background removal, and ba
     const steps = payload.options.transformation;
 
     assert.equal(payload.options.resource_type, 'image');
-    assert.equal(steps[0].effect, 'background_removal');
-    assert.equal(steps[1].effect, 'improve');
-    assert.equal(steps[2].width, 1200);
-    assert.equal(steps[2].height, 1800);
-    assert.equal(steps[2].background, 'black');
-    assert.ok(steps.some((step) => step.overlay && step.overlay.text === 'SALE'));
+    assert.equal(steps.length, 2);
+    assert.equal(steps[0].crop, 'limit');
+    assert.equal(steps[0].width, 1080);
+    assert.equal(steps[0].height, 1920);
+    assert.equal(steps[0].background, 'black');
     assert.deepEqual(steps[steps.length - 1], {
         quality: 'auto:best',
         fetch_format: 'auto',
-        dpr: '2.0'
+        dpr: 'auto'
     });
 });

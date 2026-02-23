@@ -4,11 +4,25 @@ create table if not exists products (
   id uuid primary key default gen_random_uuid(),
   public_id text not null,
   price text not null default 'Contact for Price',
+  badge_label text not null default '',
+  size text not null default '',
+  color text not null default '',
+  qty text not null default '',
   link text not null,
   preview_url text not null,
   bg_color text default 'white',
   created_at timestamptz default now()
 );
+
+-- Ensure new columns exist for existing projects
+alter table if exists products
+  add column if not exists badge_label text not null default '';
+alter table if exists products
+  add column if not exists size text not null default '';
+alter table if exists products
+  add column if not exists color text not null default '';
+alter table if exists products
+  add column if not exists qty text not null default '';
 
 -- Orders (for cart checkout / Paystack)
 create table if not exists orders (

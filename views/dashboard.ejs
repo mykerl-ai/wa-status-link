@@ -13,13 +13,13 @@
     <style>
         :root {
             --app-bg: #d7cede;
-            --surface: #ffffff;
-            --surface-secondary: #f2eff6;
-            --separator: rgba(44,30,66,0.12);
-            --text: #201a2b;
-            --text-secondary: #6b607b;
-            --text-tertiary: #8f86a0;
-            --tint: #5d4af2;
+            --surface: #f8f6fb;
+            --surface-secondary: #f0ecf7;
+            --separator: rgba(53,38,78,0.1);
+            --text: #271f35;
+            --text-secondary: #6c6180;
+            --text-tertiary: #8f84a3;
+            --tint: #6a59eb;
             --green: #34c759;
             --radius: 20px;
             --radius-sm: 12px;
@@ -31,7 +31,7 @@
         html { height: 100%; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Outfit', sans-serif;
-            background: var(--app-bg);
+            background: radial-gradient(120% 90% at 50% -10%, #efe9f7 0%, #ded5ea 42%, #d4cbe2 100%);
             color: var(--text);
             min-height: 100%;
             min-height: 100dvh;
@@ -196,7 +196,7 @@
             color: var(--text-secondary);
         }
 
-        /* Result screen – full screen card stack */
+        /* Result screen â€“ full screen card stack */
         #resultArea {
             display: none;
             position: fixed;
@@ -208,7 +208,15 @@
             padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom));
         }
         #resultArea .app-content { flex: 1; display: flex; flex-direction: column; padding: 0; max-width: 100%; }
-        .immersive-stage { position: relative; flex: 1; min-height: 0; }
+        .immersive-stage {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0 18px;
+        }
         .result-label {
             font-size: 11px;
             font-weight: 600;
@@ -227,18 +235,22 @@
         .progress-dots span.active { background: var(--tint); transform: scale(1.15); }
         .stack-wrapper {
             position: relative;
-            width: 100%;
+            width: 90vw;
+            max-width: 90vw;
             display: flex;
             align-items: flex-start;
             justify-content: center;
-            padding: 0 8px 110px;
+            padding: 0 0 110px;
             touch-action: pan-y;
         }
         .stack-container {
             position: relative;
-            width: min(286px, calc(100vw - 72px));
+            width: 100%;
+            max-width: 100%;
             aspect-ratio: 9 / 16;
+            transform: translateX(-14px);
             overflow: visible;
+            margin-left: 14px;
         }
         .card-stack-layers { position: absolute; inset: 0; overflow: visible; }
         .product-card {
@@ -247,9 +259,9 @@
             width: 100%;
             height: 100%;
             background: var(--surface);
-            border-radius: 18px;
-            border: 1px solid rgba(44,30,66,0.08);
-            box-shadow: 0 16px 28px rgba(42,28,66,0.17);
+            border-radius: 24px;
+            border: 1px solid rgba(53,38,78,0.08);
+            box-shadow: 0 14px 30px rgba(41,27,64,0.14);
             overflow: hidden;
             touch-action: pan-y;
             user-select: none;
@@ -257,26 +269,118 @@
             transition: box-shadow 0.24s ease, transform 0.3s cubic-bezier(0.2, 0.9, 0.2, 1);
             will-change: transform;
         }
-        .product-card.dragging { transition: none; cursor: grabbing; box-shadow: 0 20px 34px rgba(42,28,66,0.24); }
+        .product-card.dragging { transition: none; cursor: grabbing; box-shadow: 0 18px 32px rgba(41,27,64,0.2); }
         .product-card.stack-2 {
-            transform: translate3d(18px, 10px, 0) scale(0.97);
+            transform: translate3d(34px, 12px, 0) scale(0.95, 0.915);
             z-index: 0;
-            box-shadow: 0 8px 16px rgba(42,28,66,0.14);
+            box-shadow: 0 9px 16px rgba(41,27,64,0.16);
+            border-color: rgba(53,38,78,0.16);
+            filter: brightness(0.98) saturate(0.96);
         }
         .product-card.stack-3 {
-            transform: translate3d(32px, 18px, 0) scale(0.94);
+            transform: translate3d(62px, 24px, 0) scale(0.9, 0.83);
             z-index: -1;
-            box-shadow: 0 6px 12px rgba(42,28,66,0.1);
+            box-shadow: 0 7px 12px rgba(41,27,64,0.14);
+            border-color: rgba(53,38,78,0.2);
+            filter: brightness(0.94) saturate(0.9);
         }
         .product-card.stack-2, .product-card.stack-3 { transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s ease; }
-        .product-card img {
+        .product-card .card-image-fill {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            background: linear-gradient(180deg, #eee8f4 0%, #e5deef 100%);
+        }
+        .product-card .card-image-fill .card-image-bg,
+        .product-card .card-image-fill .card-image-main {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain;
-            object-position: center;
             display: block;
             pointer-events: none;
-            background: #f3f0f7;
+        }
+        .product-card .card-image-fill .card-image-bg {
+            object-fit: cover;
+            object-position: center;
+            filter: blur(20px) saturate(1.06);
+            transform: scale(1.08);
+            opacity: 0.52;
+        }
+        .product-card .card-image-fill .card-image-main {
+            object-fit: contain;
+            object-position: center;
+        }
+        .product-card .card-image-fill::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(
+                180deg,
+                rgba(24, 17, 38, 0.08) 0%,
+                rgba(24, 17, 38, 0.02) 34%,
+                rgba(24, 17, 38, 0.24) 100%
+            );
+        }
+        .card-top-row {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            right: 18px;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        .card-label {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 10px;
+            min-height: 30px;
+            border: 1px solid rgba(110, 131, 160, 0.7);
+            background: rgba(244, 246, 249, 0.75);
+            color: #1b2434;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            border-radius: 0;
+        }
+        .card-label.is-empty {
+            visibility: hidden;
+        }
+        .card-heart {
+            width: 24px;
+            height: 24px;
+            color: #1b2434;
+            opacity: 0.94;
+        }
+        .card-bottom-meta {
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: 18px;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            pointer-events: none;
+        }
+        .card-price-inline {
+            font-size: 42px;
+            line-height: 1;
+            font-weight: 800;
+            color: #f4f7fb;
+            text-shadow: 0 2px 14px rgba(16, 20, 31, 0.45);
+            letter-spacing: -0.04em;
+        }
+        .card-name-inline {
+            font-size: 15px;
+            font-weight: 500;
+            color: rgba(246, 248, 252, 0.94);
+            text-shadow: 0 1px 10px rgba(16, 20, 31, 0.45);
+            letter-spacing: -0.01em;
         }
         .stack-overlay {
             position: absolute;
@@ -287,25 +391,11 @@
             justify-content: space-between;
             padding: 0;
             pointer-events: none;
-            border-radius: 18px;
-            background: transparent;
+            border-radius: 24px;
+            background: linear-gradient(180deg, rgba(28,20,44,0) 56%, rgba(28,20,44,0.09) 100%);
         }
-        .stack-header { pointer-events: none; transform: translateY(-42px); padding-left: 2px; }
+        .stack-header { pointer-events: none; transform: translateY(-34px); padding-left: 2px; }
         .stack-footer { pointer-events: auto; transform: translateY(calc(100% + 12px)); }
-        .card-badge {
-            position: absolute; top: 12px; right: 12px;
-            background: rgba(255,255,255,0.95);
-            color: var(--text-secondary);
-            padding: 6px 10px;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            box-shadow: 0 4px 10px rgba(42,28,66,0.12);
-        }
-        .card-badge .check { color: #34d359; }
         .card-details { margin-top: 0; padding: 0 2px; pointer-events: none; }
         .card-title { font-size: 40px; line-height: 1; font-weight: 700; color: var(--text); letter-spacing: -0.03em; }
         .card-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
@@ -326,13 +416,13 @@
             font-family: inherit;
             transition: transform 0.16s ease, opacity 0.2s;
             pointer-events: auto;
-            box-shadow: 0 3px 8px rgba(42,28,66,0.1);
+            box-shadow: 0 2px 6px rgba(41,27,64,0.08);
         }
         .action-row button .icon { width: 16px; height: 16px; }
         .action-row button:active { opacity: 0.88; transform: translateY(1px); }
-        .btn-copy { background: #fff; color: var(--text-secondary); }
-        .wa-btn { background: #2cc56a; color: #fff; border-color: #2cc56a; }
-        .btn-cart { background: #2d7df5; color: #fff; border-color: #2d7df5; }
+        .btn-copy { background: rgba(255,255,255,0.72); color: var(--text-secondary); }
+        .wa-btn { background: rgba(44,197,106,0.16); color: #2c8652; border-color: rgba(44,197,106,0.34); }
+        .btn-cart { background: rgba(45,125,245,0.14); color: #2e5ea8; border-color: rgba(45,125,245,0.32); }
         .tab-item-wrap { position: relative; }
         .cart-tab-badge { position: absolute; top: -2px; right: 50%; margin-right: -28px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 11px; font-weight: 600; color: #fff; background: var(--tint); border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; }
         .copy-toast {
@@ -429,6 +519,15 @@
                     <button type="button" class="option-chip" data-target="badgeLabel" data-value="LIMITED">Limited</button>
                 </div>
             </div>
+            <div class="list-row">
+                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>
+                <label>Details (optional)</label>
+                <div class="detail-fields" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                    <input type="text" id="productSize" placeholder="Size" style="max-width:80px;">
+                    <input type="text" id="productColor" placeholder="Color" style="max-width:100px;">
+                    <input type="text" id="productQty" placeholder="Qty" style="max-width:70px;">
+                </div>
+            </div>
         </div>
         <p class="list-group-title">Media</p>
         <div class="list-group">
@@ -444,7 +543,7 @@
             Generate links
         </button>
     </form>
-    <div id="loading">Processing…</div>
+    <div id="loading">Processing...</div>
 </main>
 
 <div id="resultArea">
@@ -461,8 +560,7 @@
                         </div>
                         <div class="stack-footer">
                             <div class="card-details">
-                                <div class="card-title" id="cardTitle">&mdash;</div>
-                                <div class="card-subtitle" id="cardSubtitle">Scroll or swipe to browse. Tap Status Next to post in bulk.</div>
+                                <div class="card-subtitle" id="cardSubtitle">Scroll or swipe to browse. Tap Share to post in bulk.</div>
                             </div>
                             <div class="action-row">
                                 <button type="button" class="btn-copy" onclick="copyCurrent()">
@@ -471,7 +569,7 @@
                                 </button>
                                 <button type="button" class="wa-btn" onclick="shareNextStatus()">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                                    Status next
+                                    Share
                                 </button>
                                 <button type="button" class="btn-cart" onclick="addCurrentToCart()">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
@@ -586,6 +684,9 @@
         const formData = new FormData(e.target);
         formData.append('removeBg', document.getElementById('removeBgToggle').checked);
         formData.append('watermarkText', document.getElementById('watermarkInput').value);
+        formData.append('size', (document.getElementById('productSize') && document.getElementById('productSize').value) || '');
+        formData.append('color', (document.getElementById('productColor') && document.getElementById('productColor').value) || '');
+        formData.append('qty', (document.getElementById('productQty') && document.getElementById('productQty').value) || '');
 
         const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
         const data = await res.json();
@@ -601,12 +702,12 @@
             renderStack();
             var toast = document.getElementById('copyToast');
             if (data.dbSaved) {
-                toast.textContent = 'Links ready · Saved to Products';
+                toast.textContent = 'Links ready - Saved to Products';
             } else if (data.dbError) {
-                toast.textContent = 'Links ready · DB save failed: ' + data.dbError;
+                toast.textContent = 'Links ready - DB save failed: ' + data.dbError;
             } 
             // else {
-            //     toast.textContent = 'Links ready · Set SUPABASE_ANON_KEY to save to Products';
+            //     toast.textContent = 'Links ready - Set SUPABASE_ANON_KEY to save to Products';
             // }
             toast.classList.add('show');
             setTimeout(function() { toast.classList.remove('show'); }, 3000);
@@ -621,17 +722,19 @@
         const p = clamp(progress, 0, 1);
 
         if (backCards.second) {
-            const x = 18 - (p * 12);
-            const y = 10 - (p * 6);
-            const scale = 0.97 + (p * 0.02);
-            backCards.second.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+            const x = 34 - (p * 24);
+            const y = 12 - (p * 8);
+            const scaleX = 0.95 + (p * 0.04);
+            const scaleY = 0.915 + (p * 0.07);
+            backCards.second.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scaleX}, ${scaleY})`;
         }
 
         if (backCards.third) {
-            const x = 32 - (p * 16);
-            const y = 18 - (p * 10);
-            const scale = 0.94 + (p * 0.03);
-            backCards.third.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+            const x = 62 - (p * 36);
+            const y = 24 - (p * 14);
+            const scaleX = 0.9 + (p * 0.06);
+            const scaleY = 0.83 + (p * 0.1);
+            backCards.third.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scaleX}, ${scaleY})`;
         }
     }
 
@@ -666,7 +769,24 @@
             card.style.zIndex = total - 1 - i;
             if (i === 1) backCards.second = card;
             if (i === 2) backCards.third = card;
-            card.innerHTML = `<img src="${escapeHtml(item.previewUrl)}" alt="">`;
+            const safeBadge = escapeHtml(item.badgeLabel || '');
+            const safePrice = escapeHtml(item.price || '');
+            card.innerHTML = `
+                <div class="card-image-fill">
+                    <img class="card-image-bg" src="${escapeHtml(item.previewUrl)}" alt="" aria-hidden="true">
+                    <img class="card-image-main" src="${escapeHtml(item.previewUrl)}" alt="">
+                </div>
+                <div class="card-top-row">
+                    <span class="card-label ${safeBadge ? '' : 'is-empty'}">${safeBadge || 'LABEL'}</span>
+                    <svg class="card-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M20.8 5.6a5 5 0 00-7.1 0L12 7.3l-1.7-1.7a5 5 0 00-7.1 7.1L12 21.5l8.8-8.8a5 5 0 000-7.1z"></path>
+                    </svg>
+                </div>
+                <div class="card-bottom-meta">
+                    <div class="card-price-inline">${safePrice}</div>
+                    <div class="card-name-inline">Product</div>
+                </div>
+            `;
             if (isFront) initSwipe(card);
             container.appendChild(card);
         });
@@ -830,13 +950,13 @@
             }
 
             toast.textContent = wasLast
-                ? 'Shared final item to status'
+                ? 'Shared final item '
                 : `Shared. Next item ${currentIndex + 1} of ${uploadQueue.length}`;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 1800);
         } catch (err) {
             if (err && err.name === 'AbortError') return;
-            toast.textContent = 'Status share failed';
+            toast.textContent = 'Share failed';
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 1800);
         }
@@ -855,8 +975,7 @@
             if (uploadQueue.length > 10) dotsEl.innerHTML = ''; // hide dots if too many
         }
         if (uploadQueue.length && currentIndex < uploadQueue.length) {
-            document.getElementById('cardTitle').textContent = uploadQueue[currentIndex].price;
-            document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} - Scroll or swipe to browse - Tap Status Next`;
+            document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} - Scroll or swipe to browse - Tap Share`;
         }
     }
 
