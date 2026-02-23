@@ -100,6 +100,8 @@ test('buildImagePreviewUrl includes improve, optional background removal, and ba
     assert.equal(payload.options.resource_type, 'image');
     assert.equal(steps[0].effect, 'background_removal');
     assert.equal(steps[1].effect, 'improve');
+    assert.equal(steps[2].width, 800);
+    assert.equal(steps[2].height, 1200);
     assert.equal(steps[2].background, 'black');
     assert.ok(steps.some((step) => step.overlay && step.overlay.text === 'SALE'));
 });
