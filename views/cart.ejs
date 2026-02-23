@@ -47,7 +47,25 @@
         .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: var(--text-tertiary); font-size: 10px; font-weight: 500; min-height: 44px; }
         .tab-item.active { color: var(--tint); }
         .tab-item svg { width: 22px; height: 22px; }
-        .cart-badge { position: absolute; top: -4px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 11px; font-weight: 600; color: #fff; background: var(--tint); border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+        .cart-badge {
+            position: absolute;
+            top: -2px;
+            left: calc(50% + 12px);
+            transform: translateX(-50%);
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            background: var(--tint);
+            border-radius: 9px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 1;
+        }
         .tab-item-wrap { position: relative; }
     </style>
 </head>

@@ -22,7 +22,23 @@ create table if not exists orders (
   updated_at timestamptz default now()
 );
 
--- Optional: enable Row Level Security (RLS) and allow read/write with anon key if needed
--- alter table products enable row level security;
--- create policy "Allow anon read" on products for select using (true);
--- create policy "Allow anon insert" on products for insert with check (true);
+-- RLS: allow server (anon or service_role) to read/write. Run this if you get
+-- "new row violates row-level security policy" or products/orders not saving.
+-- Option A (recommended): set SUPABASE_SERVICE_KEY in .env – service role bypasses RLS, no policies needed.
+-- Option B: use only SUPABASE_ANON_KEY and run the policies below (Supabase → SQL Editor).
+
+alter table products enable row level security;
+alter table orders enable row level security;
+
+-- Drop then create so this script can be run multiple times (idempotent)
+drop policy if exists "products_select" on products;
+drop policy if exists "products_insert" on products;
+drop policy if exists "orders_select" on orders;
+drop policy if exists "orders_insert" on orders;
+drop policy if exists "orders_update" on orders;
+
+create policy "products_select" on products for select using (true);
+create policy "products_insert" on products for insert with check (true);
+create policy "orders_select" on orders for select using (true);
+create policy "orders_insert" on orders for insert with check (true);
+create policy "orders_update" on orders for update using (true);

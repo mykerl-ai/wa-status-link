@@ -2,21 +2,36 @@ const express = require('express');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const path = require('path');
+const dotenv = require('dotenv');
+
 const { createClient } = require('@supabase/supabase-js');
 const { PaystackService } = require('./lib/PaystackService');
 const { OrderService } = require('./lib/OrderService');
+const { ProductService } = require('./lib/ProductService');
+const {
+    normalizeBadgeLabel,
+    buildImageTransformations,
+    buildProductLink,
+    buildVideoAnimatedPreviewUrl,
+    buildVideoOgPreviewUrl,
+    buildImagePreviewUrl
+} = require('./lib/MediaPipeline');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
-
+dotenv.config();
 const supabaseUrl = process.env.SUPABASE_URL || 'https://jfsqdzfeqgfmmkfzhrmq.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || '';
 const supabase = supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+if (supabase) {
+    console.log('[Supabase] Using ' + (process.env.SUPABASE_SERVICE_KEY ? 'SERVICE_KEY (bypasses RLS)' : 'ANON_KEY (RLS applies)'));
+}
 
 const paystackSecret = process.env.PAYSTACK_SECRET_KEY || '';
 const paystackPublic = process.env.PAYSTACK_PUBLIC_KEY || '';
 const paystackService = paystackSecret ? new PaystackService(paystackSecret) : null;
 const orderService = supabase ? new OrderService(supabase) : null;
+const productService = supabase ? new ProductService(supabase) : null;
 
 // 1. CLOUDINARY CONFIG
 cloudinary.config({ 
@@ -43,98 +58,103 @@ app.get('/', (req, res) => {
     res.render('dashboard', { inventory: inventoryStatus });
 });
 
-// 5. BULK UPLOAD ROUTE (With Optional BG Removal & Watermark)
+// 5. BULK UPLOAD ROUTE (Image/video + AI improve + optional overlays)
 app.post('/upload-bulk', upload.array('files', 10), async (req, res) => {
     try {
         const prices = Array.isArray(req.body.prices) ? req.body.prices : [req.body.prices];
         const bgColor = req.body.bgColor || "white";
         const shouldRemoveBg = String(req.body.removeBg) === 'true';
         const watermarkText = req.body.watermarkText ? String(req.body.watermarkText).trim() : "";
+        const badgeLabel = normalizeBadgeLabel(req.body.badgeLabel);
         const results = [];
 
         for (let i = 0; i < req.files.length; i++) {
             const file = req.files[i];
             const price = prices[i] || "Contact for Price";
+            const mediaType = (file.mimetype || '').startsWith('video/') ? 'video' : 'image';
+            const uploadOptions = { resource_type: mediaType };
 
-            let transformations = [];
-            
-            if (shouldRemoveBg) {
-                transformations.push({ effect: "background_removal" });
-            }
-            
-            transformations.push({ width: 800, height: 1200, crop: "pad", background: bgColor });
-
-            if (watermarkText !== "") {
-                // Fixed: Using the string-based overlay format to avoid "component - 0" errors
-                transformations.push({
-                    overlay: { 
-                        font_family: "Arial", 
-                        font_size: 40, 
-                        font_weight: "bold", 
-                        text: watermarkText.toUpperCase() 
-                    },
-                    color: bgColor === 'white' ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.5)",
-                    gravity: "south_east", x: 25, y: 25
+            if (mediaType === 'image') {
+                uploadOptions.transformation = buildImageTransformations({
+                    shouldRemoveBg,
+                    bgColor,
+                    watermarkText,
+                    badgeLabel
                 });
             }
 
-            transformations.push({ quality: "auto:best", fetch_format: "jpg", dpr: "2.0" });
+            const result = await cloudinary.uploader.upload(file.path, uploadOptions);
+            const previewUrl = mediaType === 'video'
+                ? buildVideoAnimatedPreviewUrl(cloudinary, result.public_id)
+                : buildImagePreviewUrl(cloudinary, {
+                    publicId: result.public_id,
+                    bgColor,
+                    removeBg: shouldRemoveBg,
+                    badgeLabel
+                });
 
-            const result = await cloudinary.uploader.upload(file.path, {
-                resource_type: "auto",
-                transformation: transformations // Use 'transformation' instead of 'eager' for direct upload styling
-            });
-
-            inventoryStatus[result.public_id] = { price, type: result.resource_type, isSoldOut: false };
+            inventoryStatus[result.public_id] = {
+                price,
+                type: mediaType,
+                isSoldOut: false,
+                badgeLabel
+            };
 
             const host = req.get('host');
-            const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
-            const link = `${protocol}://${host}/p/${result.public_id}?price=${encodeURIComponent(price)}&bg=${encodeURIComponent(bgColor)}`;
-            
-            results.push({ 
-                link: link, 
-                price: price, 
-                previewUrl: result.secure_url 
+            const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+            const link = buildProductLink({
+                protocol,
+                host,
+                publicId: result.public_id,
+                price,
+                bgColor,
+                removeBg: shouldRemoveBg && mediaType === 'image',
+                badgeLabel,
+                mediaType
             });
 
-            if (supabase) {
+            results.push({
+                link,
+                price,
+                previewUrl,
+                mediaType
+            });
+
+            // Save product to Supabase (skipped if SUPABASE_ANON_KEY / SUPABASE_SERVICE_KEY not set)
+            if (productService) {
                 try {
-                    await supabase.from('products').insert({
-                        public_id: result.public_id,
+                    await productService.create({
+                        publicId: result.public_id,
                         price,
                         link,
-                        preview_url: result.secure_url,
-                        bg_color: bgColor
+                        previewUrl,
+                        bgColor
                     });
                 } catch (dbErr) {
-                    console.error('Supabase insert error:', dbErr.message);
+                    console.error('Product save error:', dbErr.message, dbErr.code || '', dbErr.details || '');
+                    if (!res.locals.dbError) res.locals.dbError = dbErr.message;
                 }
             }
         }
-        res.json({ success: true, items: results });
+        res.json({
+            success: true,
+            items: results,
+            dbSaved: !!productService && !res.locals.dbError,
+            dbError: res.locals.dbError || null
+        });
     } catch (err) {
         console.error("Cloudinary Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// 6. PRODUCTS PAGE (from Supabase)
+// 6. PRODUCTS PAGE (from Supabase via ProductService)
 app.get('/products', async (req, res) => {
-    if (!supabase) {
+    if (!productService) {
         return res.render('products', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.' });
     }
     try {
-        const { data, error } = await supabase
-            .from('products')
-            .select('id, price, link, preview_url, created_at')
-            .order('created_at', { ascending: false });
-        if (error) throw error;
-        const products = (data || []).map(row => ({
-            id: row.id,
-            price: row.price,
-            link: row.link,
-            previewUrl: row.preview_url
-        }));
+        const products = await productService.list();
         res.render('products', { products, error: null });
     } catch (err) {
         console.error('Products fetch error:', err);
@@ -153,25 +173,37 @@ app.get('/p/:publicId', (req, res) => {
     const { publicId } = req.params;
     const price = req.query.price || "Contact for Price";
     const bg = req.query.bg || "white";
-    const item = inventoryStatus[publicId] || { isSoldOut: false, type: 'image' };
+    const statusItem = inventoryStatus[publicId] || { isSoldOut: false, type: 'image', badgeLabel: '' };
+    const mediaType = (String(req.query.mt || statusItem.type || 'image').toLowerCase() === 'video') ? 'video' : 'image';
+    const shouldRemoveBg = req.query.rm === 'true';
+    const badgeLabel = normalizeBadgeLabel(req.query.badge || statusItem.badgeLabel);
 
-    const previewUrl = cloudinary.url(publicId, {
-        resource_type: item.type === 'video' ? 'video' : 'image',
-        transformation: [
-            ...(req.query.rm === 'true' ? [{ effect: "background_removal" }] : []),
-            { width: 800, height: 1200, crop: "pad", background: bg },
-            { quality: "auto:best", fetch_format: "jpg", dpr: "2.0" }
-        ]
-    });
+    const previewUrl = mediaType === 'video'
+        ? buildVideoOgPreviewUrl(cloudinary, publicId)
+        : buildImagePreviewUrl(cloudinary, {
+            publicId,
+            bgColor: bg,
+            removeBg: shouldRemoveBg,
+            badgeLabel
+        });
 
-    const rawMediaUrl = cloudinary.url(publicId, { resource_type: item.type });
+    const rawMediaUrl = cloudinary.url(publicId, { resource_type: mediaType });
     const host = req.get('host');
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const canonicalLink = `${protocol}://${host}/p/${publicId}?price=${encodeURIComponent(price)}&bg=${encodeURIComponent(bg)}`;
+    const canonicalLink = buildProductLink({
+        protocol,
+        host,
+        publicId,
+        price,
+        bgColor: bg,
+        removeBg: shouldRemoveBg,
+        badgeLabel,
+        mediaType
+    });
 
     const payload = {
         previewImage: previewUrl,
-        item: { price, isSoldOut: item.isSoldOut, type: item.type },
+        item: { price, isSoldOut: statusItem.isSoldOut, type: mediaType },
         rawMediaUrl,
         publicId,
         canonicalLink
@@ -220,7 +252,7 @@ app.post('/api/payment/initialize', async (req, res) => {
             publicKey: paystackPublic
         });
     } catch (err) {
-        console.error('Payment init error:', err);
+        console.error('Payment init error:', err.message, err.code || '', err.details || '');
         res.status(500).json({ success: false, error: err.message });
     }
 });

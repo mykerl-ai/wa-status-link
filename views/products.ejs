@@ -21,7 +21,6 @@
             --tint: #007aff;
             --green: #34c759;
             --radius: 20px;
-            --radius-sm: 12px;
             --radius-lg: 20px;
             --tab-height: 52px;
             --header-height: 48px;
@@ -51,44 +50,97 @@
         }
         .app-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
         .app-content { padding: 12px 16px 20px; max-width: 480px; margin: 0 auto; }
+
         .result-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.04em; margin-bottom: 2px; }
         .result-count { font-size: 15px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
         .progress-dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 12px; }
         .progress-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--separator); transition: all 0.2s; }
         .progress-dots span.active { background: var(--tint); transform: scale(1.2); }
+
+        .immersive-stage {
+            position: relative;
+            width: 100vw;
+            margin-top: -12px;
+            margin-left: calc(50% - 50vw);
+            margin-right: calc(50% - 50vw);
+            height: calc(100dvh - (var(--header-height) + env(safe-area-inset-top) + var(--tab-height) + env(safe-area-inset-bottom)));
+        }
+        .immersive-stage .result-label {
+            color: rgba(255,255,255,0.92);
+            text-shadow: 0 1px 10px rgba(0,0,0,0.45);
+        }
+        .immersive-stage .result-count {
+            color: rgba(255,255,255,0.92);
+            margin-bottom: 10px;
+            text-shadow: 0 1px 10px rgba(0,0,0,0.45);
+        }
+        .immersive-stage .progress-dots { justify-content: flex-start; margin-bottom: 0; }
+        .immersive-stage .progress-dots span { background: rgba(255,255,255,0.35); }
+        .immersive-stage .progress-dots span.active { background: #fff; }
+
         .stack-wrapper {
-            flex: 1;
-            min-height: min(440px, 60vh);
+            position: relative;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            touch-action: none;
+            padding: 12px;
+            touch-action: pan-y;
         }
-        .stack-container { position: relative; width: min(300px, 85vw); height: min(420px, 72vh); }
+        .stack-container {
+            position: relative;
+            width: min(560px, calc(100vw - 24px));
+            height: 100%;
+            max-height: 100%;
+            overflow: visible;
+        }
+        .card-stack-layers { position: absolute; inset: 0; overflow: visible; }
+
         .product-card {
             position: absolute;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
             background: var(--surface);
-            border-radius: var(--radius-lg);
-            box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+            border-radius: 28px;
+            box-shadow: 0 16px 34px rgba(0,0,0,0.18);
             overflow: hidden;
-            touch-action: none;
+            touch-action: pan-y;
             user-select: none;
             -webkit-user-select: none;
-            transition: box-shadow 0.2s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: box-shadow 0.24s ease, transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
             will-change: transform;
         }
-        .product-card.dragging { transition: none; cursor: grabbing; }
-        .product-card.stack-2 { transform: translate3d(10px, 12px, 0) scale(0.97); z-index: 0; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
-        .product-card.stack-3 { transform: translate3d(20px, 24px, 0) scale(0.94); z-index: -1; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .product-card.dragging { transition: none; cursor: grabbing; box-shadow: 0 24px 44px rgba(0,0,0,0.24); }
+        .product-card.stack-2 { transform: translate3d(24px, 12px, 0) scale(0.95); z-index: 0; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .product-card.stack-3 { transform: translate3d(42px, 24px, 0) scale(0.9); z-index: -1; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+        .product-card.stack-2, .product-card.stack-3 { transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s ease; }
         .product-card img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+
+        .stack-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 12;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px;
+            pointer-events: none;
+            border-radius: 28px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.04) 56%, rgba(0,0,0,0.56) 100%);
+        }
+        .stack-header { pointer-events: none; }
+        .stack-footer { pointer-events: none; }
+
         .card-badge {
-            position: absolute; bottom: 16px; left: 16px;
-            background: rgba(0,0,0,0.5);
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(0,0,0,0.45);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            color: white;
+            color: #fff;
             padding: 8px 14px;
             border-radius: 20px;
             font-size: 13px;
@@ -98,9 +150,11 @@
             gap: 6px;
         }
         .card-badge .check { color: #34d359; }
-        .card-details { margin-top: 12px; padding: 0 2px; }
-        .card-title { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
-        .card-subtitle { font-size: 13px; color: var(--text-tertiary); margin-top: 2px; }
+
+        .card-details { margin-top: 12px; padding: 0 2px; pointer-events: none; }
+        .card-title { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.02em; text-shadow: 0 2px 14px rgba(0,0,0,0.45); }
+        .card-subtitle { font-size: 13px; color: rgba(255,255,255,0.88); margin-top: 4px; text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
+
         .action-row { display: flex; gap: 10px; margin-top: 12px; }
         .action-row button {
             flex: 1;
@@ -108,26 +162,32 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
-            padding: 10px 16px;
+            padding: 10px 12px;
             min-height: 42px;
             border-radius: var(--radius);
-            border: none;
-            font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.28);
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             font-family: inherit;
             transition: opacity 0.2s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            pointer-events: auto;
         }
         .action-row button .icon { width: 16px; height: 16px; }
         .action-row button:active { opacity: 0.85; }
-        .btn-copy { background: var(--surface-secondary); color: var(--text); }
-        .wa-btn { background: var(--green); color: #fff; }
-        .btn-cart { background: var(--tint); color: #fff; }
+        .btn-copy { background: rgba(255,255,255,0.2); color: #fff; }
+        .wa-btn { background: rgba(52,199,89,0.88); color: #fff; border-color: rgba(52,199,89,0.95); }
+        .btn-cart { background: rgba(0,122,255,0.88); color: #fff; border-color: rgba(0,122,255,0.95); }
+
         .tab-item-wrap { position: relative; }
         .cart-tab-badge { position: absolute; top: -2px; right: 50%; margin-right: -28px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 11px; font-weight: 600; color: #fff; background: var(--tint); border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; }
+
         .copy-toast {
             position: fixed;
-            left: 20px; right: 20px;
+            left: 20px;
+            right: 20px;
             bottom: calc(var(--tab-height) + env(safe-area-inset-bottom) + 12px);
             background: var(--text);
             color: #fff;
@@ -143,6 +203,7 @@
             pointer-events: none;
         }
         .copy-toast.show { opacity: 1; transform: translateY(0); }
+
         .empty-state, .error-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
         .empty-state .card-title, .error-state .card-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
         .error-state .card-subtitle { color: #dc2626; }
@@ -160,6 +221,7 @@
             text-decoration: none;
         }
         .empty-state a .icon { width: 18px; height: 18px; }
+
         .tab-bar {
             position: fixed;
             bottom: 0;
@@ -214,29 +276,39 @@
             <a href="/"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Open Studio</a>
         </div>
     <% } else { %>
-        <p class="result-label">Products</p>
-        <p class="result-count"><span id="queueCount"><%= products.length %></span> items</p>
-        <div class="progress-dots" id="progressDots"></div>
-        <div class="stack-wrapper">
-            <div class="stack-container" id="cardStack"></div>
-        </div>
-        <div class="card-details">
-            <div class="card-title" id="cardTitle">—</div>
-            <div class="card-subtitle" id="cardSubtitle">Swipe left or right to browse</div>
-        </div>
-        <div class="action-row">
-            <button type="button" class="btn-copy" onclick="copyCurrent()">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                Copy
-            </button>
-            <button type="button" class="wa-btn" onclick="postCurrent()">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                Share
-            </button>
-            <button type="button" class="btn-cart" onclick="addCurrentToCart()">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
-                Add to cart
-            </button>
+        <div class="immersive-stage">
+            <div class="stack-wrapper">
+                <div class="stack-container">
+                    <div class="card-stack-layers" id="cardStack"></div>
+                    <div class="stack-overlay">
+                        <div class="stack-header">
+                            <p class="result-label">Products</p>
+                            <p class="result-count"><span id="queueCount"><%= products.length %></span> items</p>
+                            <div class="progress-dots" id="progressDots"></div>
+                        </div>
+                        <div class="stack-footer">
+                            <div class="card-details">
+                                <div class="card-title" id="cardTitle">&mdash;</div>
+                                <div class="card-subtitle" id="cardSubtitle">Swipe to browse. Tap Status Next to post in bulk.</div>
+                            </div>
+                            <div class="action-row">
+                                <button type="button" class="btn-copy" onclick="copyCurrent()">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                    Copy
+                                </button>
+                                <button type="button" class="wa-btn" onclick="shareNextStatus()">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                    Status next
+                                </button>
+                                <button type="button" class="btn-cart" onclick="addCurrentToCart()">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                                    Add to cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="copy-toast" id="copyToast">Link copied</div>
     <% } %>
@@ -252,17 +324,54 @@
 <script>
     const uploadQueue = <%- JSON.stringify(products) %>;
     let currentIndex = 0;
-    let drag = { active: false, startX: 0, currentX: 0, startTime: 0, raf: null };
-    const SWIPE_THRESHOLD = 80;
-    const THROW_MULT = 1.2;
+    let drag = {
+        active: false,
+        startX: 0,
+        currentX: 0,
+        renderedX: 0,
+        lastX: 0,
+        lastMoveTime: 0,
+        velocityX: 0,
+        startTime: 0,
+        raf: null
+    };
+    const backCards = { second: null, third: null };
+    const SWIPE_THRESHOLD = 72;
+    const VELOCITY_THRESHOLD = 0.45;
+    const THROW_MULT = 1.45;
+    const MAX_ROTATE = 16;
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
 
     function setCardTransform(el, x, rotateDeg) {
         el.style.transform = `translate3d(${x}px, 0, 0) rotate(${rotateDeg}deg)`;
     }
 
+    function updateBackCards(progress) {
+        const p = clamp(progress, 0, 1);
+
+        if (backCards.second) {
+            const x = 24 - (p * 14);
+            const y = 12 - (p * 7);
+            const scale = 0.95 + (p * 0.035);
+            backCards.second.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+        }
+
+        if (backCards.third) {
+            const x = 42 - (p * 18);
+            const y = 24 - (p * 11);
+            const scale = 0.9 + (p * 0.045);
+            backCards.third.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+        }
+    }
+
     function renderStack() {
         const container = document.getElementById('cardStack');
         container.innerHTML = '';
+        backCards.second = null;
+        backCards.third = null;
         const itemsToShow = uploadQueue.slice(currentIndex, currentIndex + 3);
         const total = itemsToShow.length;
 
@@ -271,11 +380,14 @@
             const isFront = i === 0;
             card.className = 'product-card' + (total >= 2 && i === 1 ? ' stack-2' : '') + (total >= 3 && i === 2 ? ' stack-3' : '');
             card.style.zIndex = total - 1 - i;
-            const badge = isFront ? `<div class="card-badge"><span class="check">✓</span> ${escapeHtml(item.price)}</div>` : '';
+            if (i === 1) backCards.second = card;
+            if (i === 2) backCards.third = card;
+            const badge = isFront ? `<div class="card-badge"><span class="check">&#10003;</span> ${escapeHtml(item.price)}</div>` : '';
             card.innerHTML = `<img src="${escapeHtml(item.previewUrl)}" alt="">${badge}`;
             if (isFront) initSwipe(card);
             container.appendChild(card);
         });
+        updateBackCards(0);
         updateUI();
     }
 
@@ -296,9 +408,12 @@
 
         function tick() {
             if (!drag.active || !el.parentNode) return;
-            const x = drag.currentX - drag.startX;
-            const rotate = Math.max(-14, Math.min(14, x / 10));
+            const targetX = drag.currentX - drag.startX;
+            drag.renderedX += (targetX - drag.renderedX) * 0.22;
+            const x = drag.renderedX;
+            const rotate = clamp(x / 11, -MAX_ROTATE, MAX_ROTATE);
             setCardTransform(el, x, rotate);
+            updateBackCards(clamp(Math.abs(x) / (el.offsetWidth * 0.42), 0, 1));
             drag.raf = requestAnimationFrame(tick);
         }
 
@@ -306,8 +421,14 @@
             if (drag.active) return;
             if (e.pointerType === 'mouse' && e.button !== 0) return;
             e.preventDefault();
+            const now = performance.now();
+            const startX = getX(e);
             drag.active = true;
-            drag.startX = drag.currentX = getX(e);
+            drag.startX = drag.currentX = startX;
+            drag.renderedX = 0;
+            drag.lastX = startX;
+            drag.lastMoveTime = now;
+            drag.velocityX = 0;
             drag.startTime = Date.now();
             el.classList.add('dragging');
             el.style.willChange = 'transform';
@@ -318,16 +439,24 @@
         function onMove(e) {
             if (!drag.active) return;
             if (e.cancelable) e.preventDefault();
-            drag.currentX = getX(e);
+            const now = performance.now();
+            const nextX = getX(e);
+            const dt = Math.max(1, now - drag.lastMoveTime);
+            drag.velocityX = (nextX - drag.lastX) / dt;
+            drag.lastMoveTime = now;
+            drag.lastX = nextX;
+            drag.currentX = nextX;
         }
 
         function onEnd(e) {
             if (!drag.active) return;
             const endX = getX(e);
+            drag.currentX = endX;
             const dx = endX - drag.startX;
-            const dt = Math.max(0.001, (Date.now() - drag.startTime) / 1000);
-            const velocityPx = Math.abs(dx / dt);
-            const shouldNavigate = Math.abs(dx) > SWIPE_THRESHOLD || velocityPx > 350;
+            const elapsedMs = Math.max(16, Date.now() - drag.startTime);
+            const avgVelocity = dx / elapsedMs;
+            const velocity = Math.abs(drag.velocityX || avgVelocity);
+            const shouldNavigate = Math.abs(dx) > SWIPE_THRESHOLD || velocity > VELOCITY_THRESHOLD;
             const swipeLeft = dx < 0;
             const canGoNext = currentIndex < uploadQueue.length - 1;
             const canGoPrev = currentIndex > 0;
@@ -339,25 +468,29 @@
 
             if (shouldNavigate && ((swipeLeft && canGoNext) || (!swipeLeft && canGoPrev))) {
                 const direction = swipeLeft ? -1 : 1;
-                const throwX = direction * Math.max(380, Math.abs(dx) * THROW_MULT);
-                el.style.transition = 'transform 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                setCardTransform(el, throwX, direction * 12);
-                setTimeout(() => { if (swipeLeft) goToNext(); else goToPrev(); }, 300);
+                const throwX = direction * Math.max(window.innerWidth * 0.92, Math.abs(dx) * THROW_MULT);
+                el.style.transition = 'transform 0.34s cubic-bezier(0.22, 1, 0.36, 1)';
+                setCardTransform(el, throwX, direction * MAX_ROTATE);
+                updateBackCards(1);
+                setTimeout(() => { if (swipeLeft) goToNext(); else goToPrev(); }, 280);
             } else {
-                el.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                el.style.transition = 'transform 0.42s cubic-bezier(0.16, 1, 0.3, 1)';
                 setCardTransform(el, 0, 0);
+                updateBackCards(0);
             }
         }
 
-        el.addEventListener('pointerdown', onStart, { passive: false });
-        el.addEventListener('pointermove', onMove, { passive: true });
-        el.addEventListener('pointerup', onEnd, { passive: true });
-        el.addEventListener('pointercancel', onEnd, { passive: true });
-        el.addEventListener('pointerleave', onEnd, { passive: true });
-        el.addEventListener('touchstart', onStart, { passive: false });
-        el.addEventListener('touchmove', onMove, { passive: false });
-        el.addEventListener('touchend', onEnd, { passive: true });
-        el.addEventListener('touchcancel', onEnd, { passive: true });
+        if ('PointerEvent' in window) {
+            el.addEventListener('pointerdown', onStart, { passive: false });
+            el.addEventListener('pointermove', onMove, { passive: false });
+            el.addEventListener('pointerup', onEnd, { passive: true });
+            el.addEventListener('pointercancel', onEnd, { passive: true });
+        } else {
+            el.addEventListener('touchstart', onStart, { passive: false });
+            el.addEventListener('touchmove', onMove, { passive: false });
+            el.addEventListener('touchend', onEnd, { passive: true });
+            el.addEventListener('touchcancel', onEnd, { passive: true });
+        }
     }
 
     function goToNext() {
@@ -393,10 +526,36 @@
         });
     }
 
-    function postCurrent() {
+    async function shareNextStatus() {
         if (currentIndex >= uploadQueue.length) return;
         const item = uploadQueue[currentIndex];
-        window.open(`https://wa.me/?text=${encodeURIComponent('Price: ' + item.price + '\n' + item.link)}`);
+        const text = 'Price: ' + item.price + '\n' + item.link;
+        const toast = document.getElementById('copyToast');
+        const wasLast = currentIndex >= uploadQueue.length - 1;
+
+        try {
+            if (navigator.share) {
+                await navigator.share({ text });
+            } else {
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+            }
+
+            if (!wasLast) {
+                currentIndex++;
+                renderStack();
+            }
+
+            toast.textContent = wasLast
+                ? 'Shared final item to status'
+                : `Shared. Next item ${currentIndex + 1} of ${uploadQueue.length}`;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 1800);
+        } catch (err) {
+            if (err && err.name === 'AbortError') return;
+            toast.textContent = 'Status share failed';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 1800);
+        }
     }
 
     function updateUI() {
@@ -413,7 +572,7 @@
         }
         if (uploadQueue.length && currentIndex < uploadQueue.length) {
             document.getElementById('cardTitle').textContent = uploadQueue[currentIndex].price;
-            document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} • Swipe left/right to browse`;
+            document.getElementById('cardSubtitle').textContent = `Item ${currentIndex + 1} of ${uploadQueue.length} - Swipe to browse - Tap Status Next for bulk posting`;
         }
     }
 
@@ -424,6 +583,7 @@
         const n = parseFloat(num);
         return isNaN(n) ? 0 : Math.round(n * 100);
     }
+
     function addToCart(item) {
         const raw = localStorage.getItem('wa_cart');
         const items = raw ? JSON.parse(raw) : [];
@@ -437,6 +597,7 @@
         });
         localStorage.setItem('wa_cart', JSON.stringify(items));
     }
+
     function updateCartBadge() {
         const el = document.getElementById('cartTabBadge');
         if (!el) return;
@@ -444,6 +605,7 @@
         el.textContent = n;
         el.style.display = n ? 'inline-flex' : 'none';
     }
+
     function addCurrentToCart() {
         if (currentIndex >= uploadQueue.length) return;
         const item = uploadQueue[currentIndex];
