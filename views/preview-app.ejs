@@ -489,13 +489,19 @@
 <body>
 
 <header class="app-header" style="justify-content:space-between;">
-    <h1 class="app-title">Products</h1>
+    <h1 class="app-title"><%= (typeof store !== 'undefined' && store && store.name) ? store.name : 'Products' %></h1>
     <% if (typeof user !== 'undefined' && user) { %>
     <a href="/logout?next=<%= encodeURIComponent(canonicalLink) %>" style="font-size:13px;font-weight:500;color:var(--text-secondary);text-decoration:none;">Log out</a>
     <% } else { %>
     <a href="/login?next=<%= encodeURIComponent(canonicalLink) %>" style="font-size:13px;font-weight:500;color:var(--tint);text-decoration:none;">Log in</a>
     <% } %>
 </header>
+<% if (typeof storePath !== 'undefined' && storePath) { %>
+<div style="padding:10px 20px;border-bottom:1px solid rgba(53,38,78,0.12);font-size:13px;color:#5c5369;background:rgba(248,246,251,0.7);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+    <span>Viewing store products</span>
+    <a href="<%= storePath %>" style="color:#6a59eb;text-decoration:none;font-weight:600;">Open store</a>
+</div>
+<% } %>
 
 <% if (typeof user === 'undefined' || !user) { %>
 <div class="guest-cta">
@@ -569,6 +575,8 @@
 <nav class="tab-bar">
     <% if (typeof role !== 'undefined' && role === 'owner') { %>
     <a href="/" class="tab-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span>Studio</span></a>
+    <% } else if (typeof user !== 'undefined' && user) { %>
+    <a href="/create-store" class="tab-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Create</span></a>
     <% } else if (typeof user === 'undefined' || !user) { %>
     <a href="/login" class="tab-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Log in</span></a>
     <% } %>
@@ -679,4 +687,3 @@
 </script>
 </body>
 </html>
-

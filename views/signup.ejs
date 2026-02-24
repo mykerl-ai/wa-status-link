@@ -144,7 +144,7 @@
 <body>
     <div class="bg"></div>
     <div class="card">
-        <a href="/login" class="back-link" aria-label="Back to login">
+        <a href="/login?next=<%= encodeURIComponent(typeof next !== 'undefined' ? next : '/products') %>" class="back-link" aria-label="Back to login">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Back to login
         </a>
@@ -157,6 +157,7 @@
         </ul>
         <% if (typeof error === 'string' && error) { %><div class="error"><%= error %></div><% } %>
         <form method="post" action="/signup" id="signupForm">
+            <input type="hidden" name="next" value="<%= typeof next !== 'undefined' ? next : '/products' %>">
             <div class="form-group">
                 <input type="email" id="email" name="email" required placeholder="Enter your email" autocomplete="email">
             </div>
@@ -168,7 +169,7 @@
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Register</button>
         </form>
-        <p class="footer">Already have an account? <a href="/login">Sign in</a></p>
+        <p class="footer">Already have an account? <a href="/login?next=<%= encodeURIComponent(typeof next !== 'undefined' ? next : '/products') %>">Sign in</a></p>
     </div>
 </body>
 </html>

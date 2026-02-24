@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --text: #2d2640;
+            --text-secondary: #6b6378;
+            --tint: #6a59eb;
+            --radius: 20px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: linear-gradient(160deg, #b8a9d4 0%, #a8c5e0 45%, #c9b8e0 100%);
+        }
+        .card {
+            width: 100%;
+            max-width: 420px;
+            padding: 32px 28px;
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 16px 48px rgba(45, 38, 64, 0.12);
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+            letter-spacing: -0.03em;
+        }
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.45);
+            outline: none;
+            color: var(--text);
+        }
+        .hint {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .error {
+            background: rgba(254, 242, 242, 0.9);
+            color: #b91c1c;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+        .btn {
+            border: none;
+            border-radius: 14px;
+            padding: 13px 14px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn-primary {
+            color: #fff;
+            background: linear-gradient(135deg, #6a59eb, #8577ee);
+            box-shadow: 0 6px 20px rgba(106, 89, 235, 0.35);
+        }
+        .btn-secondary {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Create Your Store</h1>
+        <p>Set your store name and public link. You can share this link so visitors only see your products.</p>
+        <% if (typeof error === 'string' && error) { %>
+            <div class="error"><%= error %></div>
+        <% } %>
+        <form method="post" action="/create-store">
+            <div class="form-group">
+                <label for="storeName">Store name</label>
+                <input
+                    id="storeName"
+                    name="storeName"
+                    type="text"
+                    required
+                    maxlength="80"
+                    value="<%= typeof initialName === 'string' ? initialName : '' %>"
+                    placeholder="e.g. Anoru Fashion"
+                >
+            </div>
+            <div class="form-group">
+                <label for="storeSlug">Store link slug (optional)</label>
+                <input
+                    id="storeSlug"
+                    name="storeSlug"
+                    type="text"
+                    maxlength="48"
+                    placeholder="e.g. anoru-fashion"
+                    pattern="[a-z0-9-]+"
+                >
+                <p class="hint">Only lowercase letters, numbers, and hyphens.</p>
+            </div>
+            <div class="actions">
+                <a href="/products" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create store</button>
+            </div>
+        </form>
+    </div>
+    <script>
+        (function () {
+            var nameInput = document.getElementById('storeName');
+            var slugInput = document.getElementById('storeSlug');
+            if (!nameInput || !slugInput) return;
+            var userEditedSlug = false;
+
+            function slugify(text) {
+                return String(text || '')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]/g, '-')
+                    .replace(/-+/g, '-')
+                    .replace(/^-+|-+$/g, '')
+                    .slice(0, 48);
+            }
+
+            slugInput.addEventListener('input', function () {
+                userEditedSlug = slugInput.value.trim().length > 0;
+            });
+
+            nameInput.addEventListener('input', function () {
+                if (userEditedSlug) return;
+                slugInput.value = slugify(nameInput.value);
+            });
+
+            if (!slugInput.value) {
+                slugInput.value = slugify(nameInput.value);
+            }
+        })();
+    </script>
+</body>
+</html>

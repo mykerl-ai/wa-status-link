@@ -480,11 +480,34 @@
 </head>
 <body>
 
-<header class="app-header">
+<header class="app-header" style="justify-content:space-between;">
     <h1 class="app-title">Studio</h1>
+    <div style="display:flex;align-items:center;gap:12px;">
+        <% if (typeof storePath !== 'undefined' && storePath) { %>
+        <a href="<%= storePath %>" style="font-size:13px;font-weight:500;color:var(--tint);text-decoration:none;">Storefront</a>
+        <% } %>
+        <a href="/logout?next=/products" style="font-size:13px;font-weight:500;color:var(--text-secondary);text-decoration:none;">Log out</a>
+    </div>
 </header>
 
 <main class="app-content">
+    <% if (typeof storeError === 'string' && storeError) { %>
+    <div style="background:rgba(254,242,242,0.9);color:#b91c1c;padding:12px 14px;border-radius:12px;margin-bottom:12px;font-size:13px;"><%= storeError %></div>
+    <% } %>
+    <% if (typeof store !== 'undefined' && store && typeof storeLink !== 'undefined' && storeLink) { %>
+    <p class="list-group-title">Store</p>
+    <div class="list-group">
+        <div class="list-row">
+            <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3.92-3.92a5 5 0 00-7.07-7.07l-1.24 1.24"/><path d="M14 11a5 5 0 00-7.54-.54L2.54 14.38a5 5 0 107.07 7.07l1.24-1.24"/></svg>
+            <label style="min-width:88px;">Share link</label>
+            <input type="text" readonly value="<%= storeLink %>" id="storeLinkInput">
+        </div>
+        <div class="list-row" style="justify-content:flex-end;gap:10px;">
+            <button type="button" class="option-chip selected" onclick="copyStoreLink()">Copy link</button>
+            <a href="<%= storePath %>" class="option-chip selected" style="text-decoration:none;">Open store</a>
+        </div>
+    </div>
+    <% } %>
     <form id="bulkForm">
         <p class="list-group-title">Create</p>
         <div class="list-group">
@@ -602,6 +625,30 @@
 </nav>
 
 <script>
+    const storeFrontLink = <%- JSON.stringify(typeof storeLink !== 'undefined' ? storeLink : '') %>;
+    function copyStoreLink() {
+        if (!storeFrontLink) return;
+        const toast = document.getElementById('copyToast');
+        const canToast = !!(toast && toast.offsetParent !== null);
+        navigator.clipboard.writeText(storeFrontLink).then(function() {
+            if (canToast) {
+                toast.textContent = 'Store link copied';
+                toast.classList.add('show');
+                setTimeout(function() { toast.classList.remove('show'); }, 1800);
+            } else {
+                alert('Store link copied');
+            }
+        }).catch(function() {
+            if (canToast) {
+                toast.textContent = 'Copy failed';
+                toast.classList.add('show');
+                setTimeout(function() { toast.classList.remove('show'); }, 1800);
+            } else {
+                alert('Copy failed');
+            }
+        });
+    }
+
     let uploadQueue = [];
     let currentIndex = 0;
     let drag = {
