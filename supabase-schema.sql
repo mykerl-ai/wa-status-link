@@ -21,6 +21,7 @@ create policy "profiles_update_own" on public.profiles for update using (auth.ui
 
 create table if not exists products (
   id uuid primary key default gen_random_uuid(),
+  owner_id uuid references auth.users(id) on delete set null,
   public_id text not null,
   price text not null default 'Contact for Price',
   badge_label text not null default '',
@@ -34,6 +35,11 @@ create table if not exists products (
 );
 
 -- Ensure new columns exist for existing projects
+-- If the line below fails (e.g. cross-schema ref), use: alter table products add column if not exists owner_id uuid;
+alter table if exists products
+  add column if not exists owner_id uuid references auth.users(id) on delete set null;
+-- Backfill: assign existing products to the first owner (run once after adding owner_id)
+-- update products set owner_id = (select id from profiles where role = 'owner' order by created_at limit 1) where owner_id is null;
 alter table if exists products
   add column if not exists badge_label text not null default '';
 alter table if exists products
@@ -42,6 +48,21 @@ alter table if exists products
   add column if not exists color text not null default '';
 alter table if exists products
   add column if not exists qty text not null default '';
+
+-- Carts (persisted when user is signed in; one row per user)
+create table if not exists carts (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  items jsonb not null default '[]',
+  updated_at timestamptz default now()
+);
+
+alter table carts enable row level security;
+drop policy if exists "carts_select" on carts;
+drop policy if exists "carts_insert" on carts;
+drop policy if exists "carts_update" on carts;
+create policy "carts_select" on carts for select using (true);
+create policy "carts_insert" on carts for insert with check (true);
+create policy "carts_update" on carts for update using (true);
 
 -- Orders (for cart checkout / Paystack)
 create table if not exists orders (

@@ -49,7 +49,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const AUTH_COOKIE = 'sb-access-token';
+const STORE_COOKIE = 'store';
 const COOKIE_OPTS = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000, path: '/' };
+const STORE_COOKIE_OPTS = { httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000, path: '/' };
 
 async function loadAuth(req, res, next) {
     req.user = null;
@@ -222,7 +224,8 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
                         badgeLabel,
                         size,
                         color,
-                        qty
+                        qty,
+                        ownerId: req.user ? req.user.id : null
                     });
                 } catch (dbErr) {
                     console.error('Product save error:', dbErr.message, dbErr.code || '', dbErr.details || '');
@@ -276,31 +279,43 @@ function withFreshPreviewUrl(product) {
     }
 }
 
-// 6. PRODUCTS PAGE (from Supabase via ProductService)
+// 6. PRODUCTS PAGE (store-scoped: only products from the store whose link you used)
 app.get('/products', async (req, res) => {
     if (!productService) {
-        return res.render('products', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.', user: req.user, role: req.role });
+        return res.render('products', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.', user: req.user, role: req.role, hasStore: false });
     }
     try {
-        const products = (await productService.list()).map(withFreshPreviewUrl);
-        res.render('products', { products, error: null, user: req.user, role: req.role });
+        const storeId = req.cookies[STORE_COOKIE] || (req.role === 'owner' && req.user ? req.user.id : null);
+        if (req.role === 'owner' && req.user && !req.cookies[STORE_COOKIE]) {
+            res.cookie(STORE_COOKIE, req.user.id, STORE_COOKIE_OPTS);
+        }
+        const effectiveStoreId = storeId || (req.role === 'owner' && req.user ? req.user.id : null);
+        const products = (await productService.list(effectiveStoreId)).map(withFreshPreviewUrl);
+        const hasStore = !!effectiveStoreId;
+        res.render('products', { products, error: null, user: req.user, role: req.role, hasStore });
     } catch (err) {
         console.error('Products fetch error:', err);
-        res.render('products', { products: [], error: err.message, user: req.user, role: req.role });
+        res.render('products', { products: [], error: err.message, user: req.user, role: req.role, hasStore: false });
     }
 });
 
-// Products — simple card grid (for comparison)
+// Products — simple card grid (store-scoped)
 app.get('/products/simple', async (req, res) => {
     if (!productService) {
-        return res.render('products-simple', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.', user: req.user, role: req.role });
+        return res.render('products-simple', { products: [], error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.', user: req.user, role: req.role, hasStore: false });
     }
     try {
-        const products = (await productService.list()).map(withFreshPreviewUrl);
-        res.render('products-simple', { products, error: null, user: req.user, role: req.role });
+        const storeId = req.cookies[STORE_COOKIE] || (req.role === 'owner' && req.user ? req.user.id : null);
+        if (req.role === 'owner' && req.user && !req.cookies[STORE_COOKIE]) {
+            res.cookie(STORE_COOKIE, req.user.id, STORE_COOKIE_OPTS);
+        }
+        const effectiveStoreId = storeId || (req.role === 'owner' && req.user ? req.user.id : null);
+        const products = (await productService.list(effectiveStoreId)).map(withFreshPreviewUrl);
+        const hasStore = !!effectiveStoreId;
+        res.render('products-simple', { products, error: null, user: req.user, role: req.role, hasStore });
     } catch (err) {
         console.error('Products fetch error:', err);
-        res.render('products-simple', { products: [], error: err.message, user: req.user, role: req.role });
+        res.render('products-simple', { products: [], error: err.message, user: req.user, role: req.role, hasStore: false });
     }
 });
 
@@ -342,6 +357,7 @@ app.get('/p/:publicId', async (req, res) => {
     });
 
     const item = { price, isSoldOut: statusItem.isSoldOut, type: mediaType, badgeLabel, size: '', color: '', qty: '' };
+    let productOwnerId = null;
     if (productService) {
         try {
             const product = await productService.getByPublicId(publicId);
@@ -349,6 +365,7 @@ app.get('/p/:publicId', async (req, res) => {
                 item.size = product.size || '';
                 item.color = product.color || '';
                 item.qty = product.qty || '';
+                productOwnerId = product.ownerId || null;
             }
         } catch (e) {
             // keep defaults
@@ -366,6 +383,9 @@ app.get('/p/:publicId', async (req, res) => {
     if (isPreviewBot(req)) {
         res.render('preview', payload);
     } else {
+        if (productOwnerId) {
+            res.cookie(STORE_COOKIE, productOwnerId, STORE_COOKIE_OPTS);
+        }
         res.render('preview-app', { ...payload, user: req.user, role: req.role });
     }
 });
@@ -373,6 +393,34 @@ app.get('/p/:publicId', async (req, res) => {
 // 8. CART PAGE
 app.get('/cart', (req, res) => {
     res.render('cart', { paystackPublicKey: paystackPublic, user: req.user, role: req.role });
+});
+
+// 8b. CART API (persist when signed in)
+app.get('/api/cart', async (req, res) => {
+    if (!req.user || !supabase) return res.status(401).json({ error: 'Not signed in' });
+    try {
+        const { data, error } = await supabase.from('carts').select('items').eq('user_id', req.user.id).maybeSingle();
+        if (error) return res.status(500).json({ error: error.message });
+        const items = Array.isArray(data?.items) ? data.items : [];
+        return res.json({ items });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+});
+
+app.put('/api/cart', async (req, res) => {
+    if (!req.user || !supabase) return res.status(401).json({ error: 'Not signed in' });
+    const items = Array.isArray(req.body?.items) ? req.body.items : [];
+    try {
+        const { error } = await supabase.from('carts').upsert(
+            { user_id: req.user.id, items, updated_at: new Date().toISOString() },
+            { onConflict: 'user_id' }
+        );
+        if (error) return res.status(500).json({ error: error.message });
+        return res.json({ success: true });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
 });
 
 // 9. PAYMENT API (OOP: PaystackService + OrderService)

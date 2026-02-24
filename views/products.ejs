@@ -447,9 +447,16 @@
         <p class="result-label">Products</p>
         <p class="result-count">0 items</p>
         <div class="empty-state">
-            <div class="card-title">No products yet</div>
-            <div class="card-subtitle">Upload photos from the Studio to see them here.</div>
-            <a href="/"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Open Studio</a>
+            <% if (typeof hasStore !== 'undefined' && hasStore) { %>
+                <div class="card-title">No products yet</div>
+                <div class="card-subtitle"><%= typeof role !== 'undefined' && role === 'owner' ? 'Upload photos from the Studio to see them here.' : 'This store has no products listed yet.' %></div>
+                <% if (typeof role !== 'undefined' && role === 'owner') { %>
+                <a href="/"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Open Studio</a>
+                <% } %>
+            <% } else { %>
+                <div class="card-title">Use a store link to browse</div>
+                <div class="card-subtitle">Open a product link from someone who shared it with you. You'll then see only their products here.</div>
+            <% } %>
         </div>
     <% } else { %>
         <div class="immersive-stage">
@@ -850,6 +857,7 @@
         return isNaN(n) ? 0 : Math.round(n * 100);
     }
 
+    var userSignedIn = <%- JSON.stringify(typeof user !== 'undefined' && !!user) %>;
     function addToCart(item) {
         const raw = localStorage.getItem('wa_cart');
         const items = raw ? JSON.parse(raw) : [];
@@ -862,6 +870,9 @@
             previewUrl: item.previewUrl || ''
         });
         localStorage.setItem('wa_cart', JSON.stringify(items));
+        if (userSignedIn) {
+            fetch('/api/cart', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: items }), credentials: 'same-origin' }).catch(function() {});
+        }
     }
 
     function updateCartBadge() {

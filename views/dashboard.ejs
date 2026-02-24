@@ -986,6 +986,7 @@
         const n = parseFloat(num);
         return isNaN(n) ? 0 : Math.round(n * 100);
     }
+    var userSignedIn = <%- JSON.stringify(typeof user !== 'undefined' && !!user) %>;
     function addToCart(item) {
         const raw = localStorage.getItem('wa_cart');
         const items = raw ? JSON.parse(raw) : [];
@@ -998,6 +999,9 @@
             previewUrl: item.previewUrl || ''
         });
         localStorage.setItem('wa_cart', JSON.stringify(items));
+        if (userSignedIn) {
+            fetch('/api/cart', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: items }), credentials: 'same-origin' }).catch(function() {});
+        }
     }
     function updateCartBadge() {
         const el = document.getElementById('cartTabBadge');

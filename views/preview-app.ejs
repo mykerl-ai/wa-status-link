@@ -585,6 +585,7 @@
         previewUrl: typeof previewImage !== 'undefined' ? previewImage : (typeof rawMediaUrl !== 'undefined' ? rawMediaUrl : '')
     }) %>;
     var shareText = payload.price + '\n' + payload.link;
+    var userSignedIn = <%- JSON.stringify(typeof user !== 'undefined' && !!user) %>;
 
     function showToast(text) {
         var toast = document.getElementById('copyToast');
@@ -666,6 +667,9 @@
             previewUrl: payload.previewUrl || ''
         });
         localStorage.setItem('wa_cart', JSON.stringify(items));
+        if (userSignedIn) {
+            fetch('/api/cart', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: items }), credentials: 'same-origin' }).catch(function () {});
+        }
         updateCartBadge();
         showToast('Added to cart');
     });

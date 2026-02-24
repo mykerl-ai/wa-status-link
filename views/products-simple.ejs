@@ -304,9 +304,16 @@
         <p class="result-label">Products</p>
         <p class="result-count">0 items</p>
         <div class="empty-state">
-            <div class="card-title">No products yet</div>
-            <p>Upload photos from the Studio to see them here.</p>
-            <a href="/">Open Studio</a>
+            <% if (typeof hasStore !== 'undefined' && hasStore) { %>
+                <div class="card-title">No products yet</div>
+                <p><%= typeof role !== 'undefined' && role === 'owner' ? 'Upload photos from the Studio to see them here.' : 'This store has no products listed yet.' %></p>
+                <% if (typeof role !== 'undefined' && role === 'owner') { %>
+                <a href="/">Open Studio</a>
+                <% } %>
+            <% } else { %>
+                <div class="card-title">Use a store link to browse</div>
+                <p>Open a product link from someone who shared it with you. You'll then see only their products here.</p>
+            <% } %>
         </div>
     <% } else { %>
         <p class="result-label">Products</p>
@@ -375,6 +382,7 @@
 (function() {
     const productsList = <%- JSON.stringify(products) %>;
     const toast = document.getElementById('copyToast');
+    var userSignedIn = <%- JSON.stringify(typeof user !== 'undefined' && !!user) %>;
 
     function parsePriceToKobo(priceStr) {
         if (!priceStr || typeof priceStr !== 'string') return 0;
@@ -396,6 +404,9 @@
             previewUrl: item.previewUrl || ''
         });
         localStorage.setItem('wa_cart', JSON.stringify(items));
+        if (userSignedIn) {
+            fetch('/api/cart', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: items }), credentials: 'same-origin' }).catch(function() {});
+        }
     }
 
     document.querySelectorAll('.product-card-simple').forEach(function(card) {

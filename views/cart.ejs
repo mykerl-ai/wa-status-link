@@ -117,6 +117,7 @@
 <script>
 (function() {
     var PAYSTACK_PUBLIC = <%- JSON.stringify(paystackPublicKey || '') %>;
+    var userSignedIn = <%- JSON.stringify(typeof user !== 'undefined' && !!user) %>;
 
     function parsePriceToKobo(priceStr) {
         if (!priceStr || typeof priceStr !== 'string') return 0;
@@ -164,8 +165,22 @@
     };
     Cart.prototype.clear = function() { this._items = []; return this.save(); };
     Cart.prototype.count = function() { return this._items.length; };
+    Cart.prototype.setItems = function(items) {
+        this._items = Array.isArray(items) ? items.slice() : [];
+        return this.save();
+    };
 
     var cart = new Cart();
+
+    function syncCartToServer() {
+        if (!userSignedIn) return;
+        fetch('/api/cart', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: cart.getItems() }),
+            credentials: 'same-origin'
+        }).catch(function() {});
+    }
 
     function formatNaira(kobo) {
         return '₦' + (kobo / 100).toLocaleString();
@@ -202,6 +217,7 @@
             btn.onclick = function() {
                 cart.remove(btn.getAttribute('data-id'));
                 render();
+                syncCartToServer();
             };
         });
     }
@@ -244,6 +260,7 @@
                         .then(function(v) {
                             if (v.success) {
                                 cart.clear();
+                                syncCartToServer();
                                 render();
                                 alert('Payment successful!');
                             }
@@ -259,7 +276,17 @@
         });
     };
 
-    render();
+    if (userSignedIn) {
+        fetch('/api/cart', { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.items && data.items.length) cart.setItems(data.items);
+                render();
+            })
+            .catch(function() { render(); });
+    } else {
+        render();
+    }
     window.Cart = Cart;
     window.parsePriceToKobo = parsePriceToKobo;
 })();
