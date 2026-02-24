@@ -104,13 +104,57 @@
         .btn-outline { background: transparent; color: var(--text); border: 2px solid rgba(106, 89, 235, 0.6); }
         .btn-outline:hover { background: rgba(106, 89, 235, 0.08); }
         .error { background: rgba(254, 242, 242, 0.9); color: #b91c1c; padding: 12px 14px; border-radius: 12px; font-size: 13px; margin-bottom: 18px; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+        .back-link:hover { color: var(--tint); }
+        .back-link svg { width: 18px; height: 18px; }
+        .benefits {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+        .benefits li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        .benefits li::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--tint);
+            flex-shrink: 0;
+        }
+        .footer { margin-top: 22px; text-align: center; font-size: 14px; color: var(--text-secondary); }
+        .footer a { color: var(--tint); font-weight: 600; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="bg"></div>
     <div class="card">
-        <h1 class="headline">Join us</h1>
-        <p class="sub">Create an account to add to cart and checkout.</p>
+        <a href="/login" class="back-link" aria-label="Back to login">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back to login
+        </a>
+        <h1 class="headline">Start shopping</h1>
+        <p class="sub">Create an account and get going in seconds.</p>
+        <ul class="benefits">
+            <li>Add items to cart and checkout with Paystack</li>
+            <li>Your email for payments — no surprises</li>
+            <li>One account for all your orders</li>
+        </ul>
         <% if (typeof error === 'string' && error) { %><div class="error"><%= error %></div><% } %>
         <form method="post" action="/signup" id="signupForm">
             <div class="form-group">
@@ -122,11 +166,9 @@
             <div class="form-group">
                 <input type="password" id="password" name="password" required placeholder="Password (min 6 characters)" autocomplete="new-password" minlength="6">
             </div>
-            <div class="btn-row">
-                <button type="submit" class="btn btn-primary">Register</button>
-                <a href="/login" class="btn btn-outline">Sign In</a>
-            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Register</button>
         </form>
+        <p class="footer">Already have an account? <a href="/login">Sign in</a></p>
     </div>
 </body>
 </html>
