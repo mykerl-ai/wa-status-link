@@ -302,6 +302,15 @@
     <a href="<%= storePath %>" style="color:#6a59eb;text-decoration:none;font-weight:600;">Store link</a>
 </div>
 <% } %>
+<% if (typeof categories !== 'undefined' && categories && categories.length > 0) { %>
+<div class="category-filter" style="padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(255,255,255,0.6);border-bottom:1px solid rgba(53,38,78,0.08);overflow-x:auto;">
+    <% const qsSimple = typeof store !== 'undefined' && store && store.slug ? '?store=' + encodeURIComponent(store.slug) : ''; %>
+    <a href="/products/simple<%= qsSimple %>" class="filter-chip <%= !categoryFilter ? 'active' : '' %>" style="flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:500;text-decoration:none;background:<%= !categoryFilter ? 'var(--tint)' : 'var(--surface-secondary)' %>;color:<%= !categoryFilter ? '#fff' : 'var(--text-secondary)' %>;">All</a>
+    <% categories.forEach(function(c) { %>
+    <a href="/products/simple<%= qsSimple %><%= qsSimple ? '&' : '?' %>category=<%= encodeURIComponent(c.id) %>" class="filter-chip <%= categoryFilter === c.id ? 'active' : '' %>" style="flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:500;text-decoration:none;background:<%= categoryFilter === c.id ? 'var(--tint)' : 'var(--surface-secondary)' %>;color:<%= categoryFilter === c.id ? '#fff' : 'var(--text-secondary)' %>;"><%= c.name %></a>
+    <% }); %>
+</div>
+<% } %>
 
 <main class="app-content">
     <% if (typeof error !== 'undefined' && error) { %>
@@ -348,11 +357,12 @@
                             <span class="card-price-original"></span>
                         </div>
                         <div class="card-meta">
+                            <% if (p.categoryName) { %><span class="card-category"><%= p.categoryName %></span><% } %>
                             <% if (p.size || p.color || p.qty) { %>
                                 <% if (p.size) { %><span>Size: <%= (p.size || '').split(',')[0].trim() %></span><% } %>
                                 <% if (p.color) { %><span>Color: <%= (p.color || '').split(',')[0].trim() %></span><% } %>
                                 <% if (p.qty) { %><span>Qty: <%= (p.qty || '').split(',')[0].trim() %></span><% } %>
-                            <% } else { %>
+                            <% } else if (!p.categoryName) { %>
                                 <span class="card-meta-empty">—</span>
                             <% } %>
                         </div>

@@ -9,6 +9,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { PaystackService } = require('./lib/PaystackService');
 const { OrderService } = require('./lib/OrderService');
 const { ProductService } = require('./lib/ProductService');
+const { CategoryService } = require('./lib/CategoryService');
 const {
     normalizeBadgeLabel,
     buildImageTransformations,
@@ -35,6 +36,7 @@ const paystackPublic = process.env.PAYSTACK_PUBLIC_KEY || '';
 const paystackService = paystackSecret ? new PaystackService(paystackSecret) : null;
 const orderService = supabase ? new OrderService(supabase) : null;
 const productService = supabase ? new ProductService(supabase) : null;
+const categoryService = supabase ? new CategoryService(supabase) : null;
 
 // 1. CLOUDINARY CONFIG
 cloudinary.config({ 
@@ -504,6 +506,61 @@ function logoutAndRedirect(req, res) {
 app.get('/logout', logoutAndRedirect);
 app.post('/logout', logoutAndRedirect);
 
+// 4b. CATEGORY API (owner only)
+app.get('/api/categories', requireOwner, async (req, res) => {
+    if (!categoryService || !supabase) return res.status(503).json({ error: 'Categories not configured' });
+    try {
+        const client = getRequestSupabase(req) || supabase;
+        const svc = new CategoryService(client);
+        const categories = await svc.list(req.user.id);
+        return res.json(categories);
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/categories', requireOwner, express.json(), async (req, res) => {
+    if (!categoryService || !supabase) return res.status(503).json({ error: 'Categories not configured' });
+    const name = String(req.body?.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'Name required' });
+    try {
+        const client = getRequestSupabase(req) || supabase;
+        const svc = new CategoryService(client);
+        const cat = await svc.create({ ownerId: req.user.id, name });
+        return res.json(cat);
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+});
+
+app.patch('/api/categories/:id', requireOwner, express.json(), async (req, res) => {
+    if (!categoryService || !supabase) return res.status(503).json({ error: 'Categories not configured' });
+    const id = req.params.id;
+    const name = String(req.body?.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'Name required' });
+    try {
+        const client = getRequestSupabase(req) || supabase;
+        const svc = new CategoryService(client);
+        const cat = await svc.update(id, req.user.id, { name });
+        if (!cat) return res.status(404).json({ error: 'Category not found' });
+        return res.json(cat);
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+});
+
+app.delete('/api/categories/:id', requireOwner, async (req, res) => {
+    if (!categoryService || !supabase) return res.status(503).json({ error: 'Categories not configured' });
+    try {
+        const client = getRequestSupabase(req) || supabase;
+        const svc = new CategoryService(client);
+        await svc.delete(req.params.id, req.user.id);
+        return res.json({ success: true });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+});
+
 // 5. DASHBOARD ROUTE (owner only)
 app.get('/', requireOwner, async (req, res) => {
     let store = null;
@@ -543,6 +600,8 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
         const size = normalizeSingleField(req.body.size);
         const color = normalizeSingleField(req.body.color);
         const qty = normalizeSingleField(req.body.qty);
+        const categoryId = req.body.categoryId ? String(req.body.categoryId).trim() || null : null;
+        const categoryId = (req.body.categoryId && String(req.body.categoryId).trim()) || null;
         const results = [];
         const host = req.get('host');
         const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -625,7 +684,8 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
                         size,
                         color,
                         qty,
-                        ownerId: req.user ? req.user.id : null
+                        ownerId: req.user ? req.user.id : null,
+                        categoryId: categoryId || null
                     });
                 } catch (dbErr) {
                     console.error('Product save error:', dbErr.message, dbErr.code || '', dbErr.details || '');
@@ -707,6 +767,8 @@ async function renderStoreProducts(req, res, viewName) {
     if (!productService) {
         return res.render(viewName, {
             products: [],
+            categories: [],
+            categoryFilter: '',
             error: 'Supabase not configured. Set SUPABASE_ANON_KEY or SUPABASE_SERVICE_KEY in env.',
             user: req.user,
             role: req.role,
@@ -728,14 +790,22 @@ async function renderStoreProducts(req, res, viewName) {
         if (store?.slug) setStoreCookie(res, store.slug);
         else if (requestedToken) clearStoreCookie(res);
 
-        const products = store
-            ? (await productService.list(store.ownerId)).map(withFreshPreviewUrl)
+        const categoryFilter = req.query.category ? String(req.query.category).trim() || null : null;
+        let products = store
+            ? (await productService.list(store.ownerId, categoryFilter || undefined)).map(withFreshPreviewUrl)
             : [];
+        const categories = store && categoryService
+            ? await categoryService.list(store.ownerId)
+            : [];
+        const catMap = Object.fromEntries((categories || []).map(c => [c.id, c.name]));
+        products = products.map(p => ({ ...p, categoryName: (p.categoryId && catMap[p.categoryId]) || '' }));
         const storePath = store?.slug ? storePathFromSlug(store.slug) : null;
         const storeLink = storePath ? absoluteUrlFromPath(req, storePath) : null;
 
         return res.render(viewName, {
             products,
+            categories,
+            categoryFilter: categoryFilter || '',
             error: null,
             user: req.user,
             role: req.role,
@@ -750,6 +820,8 @@ async function renderStoreProducts(req, res, viewName) {
         console.error('Products fetch error:', err);
         return res.render(viewName, {
             products: [],
+            categories: [],
+            categoryFilter: '',
             error: err.message,
             user: req.user,
             role: req.role,

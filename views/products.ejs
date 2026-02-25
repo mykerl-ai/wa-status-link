@@ -445,6 +445,15 @@
     <a href="<%= storePath %>" style="color:#6a59eb;text-decoration:none;font-weight:600;">Store link</a>
 </div>
 <% } %>
+<% if (typeof categories !== 'undefined' && categories && categories.length > 0) { %>
+<div class="category-filter" style="padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(255,255,255,0.6);border-bottom:1px solid rgba(53,38,78,0.08);overflow-x:auto;">
+    <% const qs = typeof store !== 'undefined' && store && store.slug ? '?store=' + encodeURIComponent(store.slug) : ''; %>
+    <a href="/products<%= qs %>" class="filter-chip <%= !categoryFilter ? 'active' : '' %>" style="flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:500;text-decoration:none;background:<%= !categoryFilter ? 'var(--tint)' : 'var(--surface-secondary)' %>;color:<%= !categoryFilter ? '#fff' : 'var(--text-secondary)' %>;">All</a>
+    <% categories.forEach(function(c) { %>
+    <a href="/products<%= qs %><%= qs ? '&' : '?' %>category=<%= encodeURIComponent(c.id) %>" class="filter-chip <%= categoryFilter === c.id ? 'active' : '' %>" style="flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:500;text-decoration:none;background:<%= categoryFilter === c.id ? 'var(--tint)' : 'var(--surface-secondary)' %>;color:<%= categoryFilter === c.id ? '#fff' : 'var(--text-secondary)' %>;"><%= c.name %></a>
+    <% }); %>
+</div>
+<% } %>
 
 <main class="app-content">
     <% if (typeof error !== 'undefined' && error) { %>
@@ -612,6 +621,7 @@
             const safePrice = escapeHtml(item.price || '');
             const parts = [];
             const s = (v) => (v || '').split(',')[0].trim();
+            if (item.categoryName) parts.push(escapeHtml(item.categoryName));
             if (item.size) parts.push('Size: ' + escapeHtml(s(item.size)));
             if (item.color) parts.push('Color: ' + escapeHtml(s(item.color)));
             if (item.qty) parts.push('Qty: ' + escapeHtml(s(item.qty)));

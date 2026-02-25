@@ -107,10 +107,48 @@ left join public.stores s on s.owner_id = p.id
 where p.role = 'owner'
   and s.owner_id is null;
 
+-- Categories (owner-scoped; each store has its own).
+create table if not exists public.categories (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  slug text not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  unique(owner_id, slug)
+);
+
+alter table public.categories enable row level security;
+
+drop policy if exists "categories_select_public" on public.categories;
+drop policy if exists "categories_insert_owner" on public.categories;
+drop policy if exists "categories_update_owner" on public.categories;
+drop policy if exists "categories_delete_owner" on public.categories;
+
+create policy "categories_select_public"
+  on public.categories for select
+  using (true);
+
+create policy "categories_insert_owner"
+  on public.categories for insert
+  with check (auth.uid() = owner_id);
+
+create policy "categories_update_owner"
+  on public.categories for update
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+create policy "categories_delete_owner"
+  on public.categories for delete
+  using (auth.uid() = owner_id);
+
+create index if not exists categories_owner_id_idx on public.categories(owner_id);
+
 -- Products (tenant-bound by owner_id).
 create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid references auth.users(id) on delete set null,
+  category_id uuid references public.categories(id) on delete set null,
   public_id text not null,
   price text not null default 'Contact for Price',
   badge_label text not null default '',
@@ -126,6 +164,8 @@ create table if not exists public.products (
 alter table public.products
   add column if not exists owner_id uuid references auth.users(id) on delete set null;
 alter table public.products
+  add column if not exists category_id uuid references public.categories(id) on delete set null;
+alter table public.products
   add column if not exists badge_label text not null default '';
 alter table public.products
   add column if not exists size text not null default '';
@@ -135,6 +175,7 @@ alter table public.products
   add column if not exists qty text not null default '';
 
 create index if not exists products_owner_id_idx on public.products(owner_id);
+create index if not exists products_category_id_idx on public.products(category_id);
 create index if not exists products_created_at_idx on public.products(created_at desc);
 
 alter table public.products enable row level security;

@@ -543,6 +543,13 @@
                 </div>
             </div>
             <div class="list-row">
+                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><rect x="8" y="8" width="8" height="8"/></svg>
+                <label>Category</label>
+                <select name="categoryId" id="categorySelect" style="flex:1;min-width:0;border:none;background:transparent;font-size:15px;color:var(--text);font-family:inherit;">
+                    <option value="">None</option>
+                </select>
+            </div>
+            <div class="list-row">
                 <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>
                 <label>Details (optional)</label>
                 <div class="detail-fields" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
@@ -551,6 +558,14 @@
                     <input type="text" id="productQty" placeholder="Qty" style="max-width:70px;">
                 </div>
             </div>
+        </div>
+        <p class="list-group-title">Categories</p>
+        <div class="list-group">
+            <div class="list-row" style="flex-wrap:wrap;">
+                <input type="text" id="newCategoryName" placeholder="New category name" style="flex:1;min-width:120px;border:1px solid var(--separator);border-radius:8px;padding:8px 12px;font-size:14px;">
+                <button type="button" class="option-chip selected" id="addCategoryBtn">Add</button>
+            </div>
+            <div id="categoryList" class="category-list" style="padding:0 16px 12px;font-size:13px;color:var(--text-secondary);"></div>
         </div>
         <p class="list-group-title">Media</p>
         <div class="list-group">
@@ -626,6 +641,42 @@
 
 <script>
     const storeFrontLink = <%- JSON.stringify(typeof storeLink !== 'undefined' ? storeLink : '') %>;
+    let categories = [];
+
+    async function loadCategories() {
+        try {
+            const res = await fetch('/api/categories', { credentials: 'same-origin' });
+            if (res.ok) {
+                categories = await res.json();
+                renderCategorySelect();
+                renderCategoryList();
+            }
+        } catch (e) { /* ignore */ }
+    }
+    function renderCategorySelect() {
+        const sel = document.getElementById('categorySelect');
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="">None</option>';
+        categories.forEach(function(c) {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            sel.appendChild(opt);
+        });
+        if (current && categories.some(function(c) { return c.id === current; })) sel.value = current;
+    }
+    function renderCategoryList() {
+        const el = document.getElementById('categoryList');
+        if (!el) return;
+        if (categories.length === 0) {
+            el.innerHTML = '<span style="opacity:0.7;">No categories yet. Add one above.</span>';
+            return;
+        }
+        el.innerHTML = categories.map(function(c) {
+            return '<span class="category-chip" style="display:inline-block;margin:2px 4px 2px 0;padding:4px 8px;background:var(--surface-secondary);border-radius:8px;">' + escapeHtml(c.name) + '</span>';
+        }).join('');
+    }
     function copyStoreLink() {
         if (!storeFrontLink) return;
         const toast = document.getElementById('copyToast');
@@ -673,6 +724,32 @@
     function clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
     }
+
+    loadCategories();
+    document.getElementById('addCategoryBtn').addEventListener('click', async function() {
+        const input = document.getElementById('newCategoryName');
+        const name = (input && input.value || '').trim();
+        if (!name) return;
+        try {
+            const res = await fetch('/api/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name }),
+                credentials: 'same-origin'
+            });
+            const data = await res.json();
+            if (res.ok) {
+                categories.push(data);
+                renderCategorySelect();
+                renderCategoryList();
+                input.value = '';
+            } else {
+                alert(data.error || 'Failed to add category');
+            }
+        } catch (e) {
+            alert('Failed to add category');
+        }
+    });
 
     // Background option chips
     document.querySelectorAll('.option-chip').forEach(function(btn) {
@@ -736,6 +813,8 @@
         formData.append('size', (document.getElementById('productSize') && document.getElementById('productSize').value) || '');
         formData.append('color', (document.getElementById('productColor') && document.getElementById('productColor').value) || '');
         formData.append('qty', (document.getElementById('productQty') && document.getElementById('productQty').value) || '');
+        const catSel = document.getElementById('categorySelect');
+        if (catSel && catSel.value) formData.append('categoryId', catSel.value);
 
         try {
             const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
