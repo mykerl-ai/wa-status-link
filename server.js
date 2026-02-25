@@ -600,7 +600,6 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
         const size = normalizeSingleField(req.body.size);
         const color = normalizeSingleField(req.body.color);
         const qty = normalizeSingleField(req.body.qty);
-        const categoryId = req.body.categoryId ? String(req.body.categoryId).trim() || null : null;
         const categoryId = (req.body.categoryId && String(req.body.categoryId).trim()) || null;
         const results = [];
         const host = req.get('host');
