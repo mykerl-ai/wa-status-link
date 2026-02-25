@@ -93,6 +93,7 @@
             justify-content: center;
             box-shadow: 0 4px 16px rgba(45, 38, 64, 0.08);
         }
+        .btn:disabled { opacity: 0.7; cursor: not-allowed; }
         .btn:hover { background: rgba(255, 255, 255, 0.95); }
         .btn-primary {
             background: linear-gradient(135deg, #6a59eb, #8577ee);
@@ -167,9 +168,20 @@
             <div class="form-group">
                 <input type="password" id="password" name="password" required placeholder="Password (min 6 characters)" autocomplete="new-password" minlength="6">
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Register</button>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;" id="signupSubmitBtn">Register</button>
         </form>
         <p class="footer">Already have an account? <a href="/login?next=<%= encodeURIComponent(typeof next !== 'undefined' ? next : '/products') %>">Sign in</a></p>
     </div>
+    <script>
+        (function () {
+            var form = document.getElementById('signupForm');
+            var btn = document.getElementById('signupSubmitBtn');
+            if (!form || !btn) return;
+            form.addEventListener('submit', function () {
+                btn.disabled = true;
+                btn.textContent = 'Creating account...';
+            });
+        })();
+    </script>
 </body>
 </html>

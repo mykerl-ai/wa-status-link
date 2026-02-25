@@ -725,7 +725,9 @@
         e.preventDefault();
         const btn = document.getElementById('uploadBtn');
         const loader = document.getElementById('loading');
+        const originalBtnHtml = btn.innerHTML;
         btn.disabled = true;
+        btn.textContent = 'Generating...';
         loader.style.display = 'block';
 
         const formData = new FormData(e.target);
@@ -735,13 +737,13 @@
         formData.append('color', (document.getElementById('productColor') && document.getElementById('productColor').value) || '');
         formData.append('qty', (document.getElementById('productQty') && document.getElementById('productQty').value) || '');
 
-        const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
-        const data = await res.json();
-        
-        loader.style.display = 'none';
-        btn.disabled = false;
+        try {
+            const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error((data && data.error) || 'Upload failed');
+            }
 
-        if (data.success) {
             uploadQueue = data.items;
             currentIndex = 0;
             document.querySelector('body > main').style.display = 'none';
@@ -752,12 +754,17 @@
                 toast.textContent = 'Links ready - Saved to Products';
             } else if (data.dbError) {
                 toast.textContent = 'Links ready - DB save failed: ' + data.dbError;
-            } 
-            // else {
-            //     toast.textContent = 'Links ready - Set SUPABASE_ANON_KEY to save to Products';
-            // }
+            } else {
+                toast.textContent = 'Links ready';
+            }
             toast.classList.add('show');
             setTimeout(function() { toast.classList.remove('show'); }, 3000);
+        } catch (err) {
+            alert((err && err.message) || 'Upload failed');
+        } finally {
+            loader.style.display = 'none';
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
         }
     };
 

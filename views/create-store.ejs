@@ -93,6 +93,10 @@
             text-align: center;
             text-decoration: none;
         }
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
         .btn-primary {
             color: #fff;
             background: linear-gradient(135deg, #6a59eb, #8577ee);
@@ -112,7 +116,7 @@
         <% if (typeof error === 'string' && error) { %>
             <div class="error"><%= error %></div>
         <% } %>
-        <form method="post" action="/create-store">
+        <form method="post" action="/create-store" id="createStoreForm">
             <div class="form-group">
                 <label for="storeName">Store name</label>
                 <input
@@ -138,8 +142,8 @@
                 <p class="hint">Only lowercase letters, numbers, and hyphens.</p>
             </div>
             <div class="actions">
-                <a href="/products" class="btn btn-secondary">Cancel</a>
-                <button type="submit" class="btn btn-primary">Create store</button>
+                <a href="/products" class="btn btn-secondary" id="createStoreCancelBtn">Cancel</a>
+                <button type="submit" class="btn btn-primary" id="createStoreSubmitBtn">Create store</button>
             </div>
         </form>
     </div>
@@ -170,6 +174,20 @@
 
             if (!slugInput.value) {
                 slugInput.value = slugify(nameInput.value);
+            }
+
+            var form = document.getElementById('createStoreForm');
+            var submitBtn = document.getElementById('createStoreSubmitBtn');
+            var cancelBtn = document.getElementById('createStoreCancelBtn');
+            if (form && submitBtn) {
+                form.addEventListener('submit', function () {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Creating...';
+                    if (cancelBtn) {
+                        cancelBtn.style.pointerEvents = 'none';
+                        cancelBtn.style.opacity = '0.65';
+                    }
+                });
             }
         })();
     </script>

@@ -89,6 +89,7 @@
             font-family: inherit;
             box-shadow: 0 6px 20px rgba(232, 122, 107, 0.4);
         }
+        .btn:disabled { opacity: 0.7; cursor: not-allowed; }
         .btn:hover { opacity: 0.95; transform: translateY(-1px); }
         .divider { display: flex; align-items: center; gap: 12px; margin: 24px 0 20px; font-size: 13px; color: var(--text-secondary); }
         .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.5); }
@@ -118,7 +119,7 @@
         <p class="sub">Welcome back, you've been missed!</p>
         <% if (typeof error === 'string' && error) { %><div class="error"><%= error %></div><% } %>
         <% if (typeof message === 'string' && message) { %><div class="error"><%= message %></div><% } %>
-        <form method="post" action="/login">
+        <form method="post" action="/login" id="loginForm">
             <input type="hidden" name="next" value="<%= typeof next !== 'undefined' ? next : '/' %>">
             <div class="form-group">
                 <input type="email" id="email" name="email" required placeholder="Enter your email" autocomplete="email">
@@ -127,7 +128,7 @@
                 <input type="password" id="password" name="password" required placeholder="Password" autocomplete="current-password">
             </div>
             <p class="forgot"><a href="#">Forgot password?</a></p>
-            <button type="submit" class="btn">Login</button>
+            <button type="submit" class="btn" id="loginSubmitBtn">Login</button>
         </form>
         <div class="divider">Or login with</div>
         <div class="social">
@@ -137,5 +138,16 @@
         </div>
         <p class="footer">Don't have an account? <a href="/signup?next=<%= encodeURIComponent(typeof next !== 'undefined' ? next : '/products') %>">Sign up</a></p>
     </div>
+    <script>
+        (function () {
+            var form = document.getElementById('loginForm');
+            var btn = document.getElementById('loginSubmitBtn');
+            if (!form || !btn) return;
+            form.addEventListener('submit', function () {
+                btn.disabled = true;
+                btn.textContent = 'Logging in...';
+            });
+        })();
+    </script>
 </body>
 </html>

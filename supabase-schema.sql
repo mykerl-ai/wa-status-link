@@ -60,10 +60,18 @@ create unique index if not exists stores_slug_key on public.stores(slug);
 
 alter table public.stores enable row level security;
 
-drop policy if exists "stores_select_public" on public.stores;
-drop policy if exists "stores_insert_own" on public.stores;
-drop policy if exists "stores_update_own" on public.stores;
-drop policy if exists "stores_delete_own" on public.stores;
+-- Remove any previous/legacy policies so reruns are deterministic.
+do $$
+declare p record;
+begin
+  for p in
+    select policyname
+    from pg_policies
+    where schemaname = 'public' and tablename = 'stores'
+  loop
+    execute format('drop policy if exists %I on public.stores', p.policyname);
+  end loop;
+end $$;
 
 create policy "stores_select_public"
   on public.stores for select

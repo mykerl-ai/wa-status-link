@@ -117,6 +117,12 @@ function clearStoreCookie(res) {
     res.clearCookie(STORE_COOKIE, { path: '/' });
 }
 
+function getCreateStoreHref(req) {
+    if (req?.role === 'owner') return '';
+    if (req?.user) return '/create-store';
+    return '/signup?next=' + encodeURIComponent('/create-store');
+}
+
 function createAuthClient() {
     const authKey = supabaseAnonKey || supabaseKey;
     if (!authKey) return null;
@@ -129,6 +135,11 @@ function getRequestSupabase(req) {
     const token = req?.cookies?.[AUTH_COOKIE];
     if (!token || !supabaseAnonKey) return supabase;
     return createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false
+        },
         global: {
             headers: {
                 Authorization: `Bearer ${token}`
@@ -183,7 +194,12 @@ async function upsertStoreForOwner({ ownerId, storeName, storeSlug, supabaseClie
             .eq('id', existing.id)
             .select('id, owner_id, slug, name')
             .single();
-        if (error) throw error;
+        if (error) {
+            if (error.code === '42501') {
+                throw new Error('Store update blocked by database policy. Run the latest supabase-schema.sql and retry.');
+            }
+            throw error;
+        }
         return mapStoreRow(data);
     }
 
@@ -203,6 +219,9 @@ async function upsertStoreForOwner({ ownerId, storeName, storeSlug, supabaseClie
             .single();
         if (!error) return mapStoreRow(data);
         if (error.code === '23505') continue;
+        if (error.code === '42501') {
+            throw new Error('Store creation blocked by database policy. Run the latest supabase-schema.sql and retry.');
+        }
         throw error;
     }
 
@@ -406,7 +425,10 @@ app.post('/signup', express.urlencoded({ extended: true }), async (req, res) => 
     }
 });
 
-app.get('/create-store', requireSignedIn, async (req, res) => {
+app.get('/create-store', async (req, res) => {
+    if (!req.user) {
+        return res.redirect('/signup?next=' + encodeURIComponent('/create-store'));
+    }
     if (req.role === 'owner') return res.redirect('/');
     const defaultName = req.profile?.displayName || (req.user.email ? req.user.email.split('@')[0] : '');
     res.render('create-store', {
@@ -417,7 +439,10 @@ app.get('/create-store', requireSignedIn, async (req, res) => {
     });
 });
 
-app.post('/create-store', requireSignedIn, express.urlencoded({ extended: true }), async (req, res) => {
+app.post('/create-store', express.urlencoded({ extended: true }), async (req, res) => {
+    if (!req.user) {
+        return res.redirect('/signup?next=' + encodeURIComponent('/create-store'));
+    }
     const storeName = String(req.body.storeName || '').trim();
     const storeSlug = String(req.body.storeSlug || '').trim();
     if (!storeName) {
@@ -438,7 +463,7 @@ app.post('/create-store', requireSignedIn, express.urlencoded({ extended: true }
     }
     try {
         const requestSupabase = getRequestSupabase(req) || supabase;
-        await requestSupabase
+        const { error: profileError } = await requestSupabase
             .from('profiles')
             .upsert(
                 {
@@ -448,6 +473,9 @@ app.post('/create-store', requireSignedIn, express.urlencoded({ extended: true }
                 },
                 { onConflict: 'id' }
             );
+        if (profileError) {
+            throw new Error('Could not upgrade your account to owner: ' + profileError.message);
+        }
 
         const ownerStore = await upsertStoreForOwner({
             ownerId: req.user.id,
@@ -686,7 +714,8 @@ async function renderStoreProducts(req, res, viewName) {
             store: null,
             storePath: null,
             storeLink: null,
-            canCreateStore: !!req.user && req.role !== 'owner'
+            canCreateStore: req.role !== 'owner',
+            createStoreHref: getCreateStoreHref(req)
         });
     }
 
@@ -714,7 +743,8 @@ async function renderStoreProducts(req, res, viewName) {
             store,
             storePath,
             storeLink,
-            canCreateStore: !!req.user && req.role !== 'owner'
+            canCreateStore: req.role !== 'owner',
+            createStoreHref: getCreateStoreHref(req)
         });
     } catch (err) {
         console.error('Products fetch error:', err);
@@ -727,7 +757,8 @@ async function renderStoreProducts(req, res, viewName) {
             store: null,
             storePath: null,
             storeLink: null,
-            canCreateStore: !!req.user && req.role !== 'owner'
+            canCreateStore: req.role !== 'owner',
+            createStoreHref: getCreateStoreHref(req)
         });
     }
 }
@@ -821,13 +852,25 @@ app.get('/p/:publicId', async (req, res) => {
         res.render('preview', payload);
     } else {
         if (activeStoreSlug) setStoreCookie(res, activeStoreSlug);
-        res.render('preview-app', { ...payload, user: req.user, role: req.role });
+        res.render('preview-app', {
+            ...payload,
+            user: req.user,
+            role: req.role,
+            canCreateStore: req.role !== 'owner',
+            createStoreHref: getCreateStoreHref(req)
+        });
     }
 });
 
 // 8. CART PAGE
 app.get('/cart', (req, res) => {
-    res.render('cart', { paystackPublicKey: paystackPublic, user: req.user, role: req.role });
+    res.render('cart', {
+        paystackPublicKey: paystackPublic,
+        user: req.user,
+        role: req.role,
+        canCreateStore: req.role !== 'owner',
+        createStoreHref: getCreateStoreHref(req)
+    });
 });
 
 // 8b. CART API (persist when signed in)

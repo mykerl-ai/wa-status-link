@@ -429,7 +429,7 @@
     <h1 class="app-title"><%= (typeof store !== 'undefined' && store && store.name) ? store.name : 'Products' %></h1>
     <div style="display:flex;align-items:center;gap:12px;">
         <% if (typeof canCreateStore !== 'undefined' && canCreateStore) { %>
-        <a href="/create-store" class="view-switch">Create store</a>
+        <a href="<%= typeof createStoreHref === 'string' && createStoreHref ? createStoreHref : '/signup?next=%2Fcreate-store' %>" class="view-switch">Create store</a>
         <% } %>
         <a href="/products/simple" class="view-switch">Simple view</a>
         <% if (typeof user !== 'undefined' && user) { %>
@@ -466,7 +466,7 @@
                 <div class="card-title">Use a store link to browse</div>
                 <div class="card-subtitle">Open a product link from someone who shared it with you. You'll then see only their products here.</div>
                 <% if (typeof canCreateStore !== 'undefined' && canCreateStore) { %>
-                <a href="/create-store" style="display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:12px 24px;background:var(--tint);color:#fff;border-radius:var(--radius);font-size:15px;font-weight:600;text-decoration:none;">Create your own store</a>
+                <a href="<%= typeof createStoreHref === 'string' && createStoreHref ? createStoreHref : '/signup?next=%2Fcreate-store' %>" style="display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:12px 24px;background:var(--tint);color:#fff;border-radius:var(--radius);font-size:15px;font-weight:600;text-decoration:none;">Create your own store</a>
                 <% } %>
             <% } %>
         </div>
@@ -513,7 +513,7 @@
     <% if (typeof role !== 'undefined' && role === 'owner') { %>
     <a href="/" class="tab-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span>Studio</span></a>
     <% } else if (typeof canCreateStore !== 'undefined' && canCreateStore) { %>
-    <a href="/create-store" class="tab-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Create</span></a>
+    <a href="<%= typeof createStoreHref === 'string' && createStoreHref ? createStoreHref : '/signup?next=%2Fcreate-store' %>" class="tab-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Create</span></a>
     <% } else if (typeof user === 'undefined' || !user) { %>
     <a href="/login" class="tab-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Log in</span></a>
     <% } %>
