@@ -408,6 +408,29 @@
     const toast = document.getElementById('copyToast');
     var userSignedIn = <%- JSON.stringify(typeof user !== 'undefined' && !!user) %>;
 
+    function parseMoneyNumber(value) {
+        if (value == null) return null;
+        const raw = String(value).trim();
+        if (!raw) return null;
+        const cleaned = raw.replace(/[, ]+/g, '').replace(/[^\d.-]/g, '');
+        if (!cleaned || cleaned === '-' || cleaned === '.' || cleaned === '-.') return null;
+        const n = Number(cleaned);
+        if (!Number.isFinite(n) || n <= 0) return null;
+        return n;
+    }
+
+    function normalizePriceText(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        const n = parseMoneyNumber(raw);
+        if (n == null) return raw;
+        const hasDecimals = Math.abs(n - Math.round(n)) > 0.0001;
+        return '₦' + n.toLocaleString('en-NG', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: hasDecimals ? 2 : 0
+        });
+    }
+
     function parsePriceToKobo(priceStr) {
         if (!priceStr || typeof priceStr !== 'string') return 0;
         const num = ('' + priceStr).replace(/[^\d.]/g, '').trim();
@@ -422,7 +445,7 @@
         const amountKobo = item.amountKobo != null ? Number(item.amountKobo) : parsePriceToKobo(item.price);
         items.push({
             id: item.id || item.link || Math.random().toString(36).slice(2),
-            price: item.price || 'Contact for price',
+            price: normalizePriceText(item.price || '') || 'Contact for price',
             amountKobo: amountKobo,
             link: item.link || '',
             previewUrl: item.previewUrl || ''
@@ -445,7 +468,7 @@
         if (copyBtn) {
             copyBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const text = item.price + '\n' + item.link;
+                const text = normalizePriceText(item.price || '') + '\n' + item.link;
                 navigator.clipboard.writeText(text).then(function() {
                     toast.textContent = 'Link copied!';
                     toast.classList.add('show');
@@ -460,7 +483,7 @@
         if (shareBtn) {
             shareBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const text = 'Price: ' + item.price + '\n' + item.link;
+                const text = 'Price: ' + normalizePriceText(item.price || '') + '\n' + item.link;
                 if (navigator.share) {
                     navigator.share({ text: text }).then(function() {
                         toast.textContent = 'Shared';
@@ -485,10 +508,13 @@
             });
         }
     });
+
+    document.querySelectorAll('.card-price-current').forEach(function(el) {
+        el.textContent = normalizePriceText(el.textContent || '');
+    });
 })();
 </script>
 <% } %>
 
 </body>
 </html>
-

@@ -143,6 +143,29 @@
         return isNaN(n) ? 0 : Math.round(n * 100);
     }
 
+    function parseMoneyNumber(value) {
+        if (value == null) return null;
+        var raw = String(value).trim();
+        if (!raw) return null;
+        var cleaned = raw.replace(/[, ]+/g, '').replace(/[^\d.-]/g, '');
+        if (!cleaned || cleaned === '-' || cleaned === '.' || cleaned === '-.') return null;
+        var n = Number(cleaned);
+        if (!Number.isFinite(n) || n <= 0) return null;
+        return n;
+    }
+
+    function normalizePriceText(value) {
+        var raw = String(value || '').trim();
+        if (!raw) return '';
+        var n = parseMoneyNumber(raw);
+        if (n == null) return raw;
+        var hasDecimals = Math.abs(n - Math.round(n)) > 0.0001;
+        return '₦' + n.toLocaleString('en-NG', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: hasDecimals ? 2 : 0
+        });
+    }
+
     function Cart() {
         this.storageKey = 'wa_cart';
         this._items = [];
@@ -164,7 +187,7 @@
         var amountKobo = Number(item.amountKobo) || parsePriceToKobo(item.price);
         this._items.push({
             id: id,
-            price: item.price || 'Contact for price',
+            price: normalizePriceText(item.price || '') || 'Contact for price',
             amountKobo: amountKobo,
             link: item.link || '',
             previewUrl: item.previewUrl || ''
@@ -199,7 +222,7 @@
     }
 
     function formatNaira(kobo) {
-        return '₦' + (kobo / 100).toLocaleString();
+        return '₦' + (kobo / 100).toLocaleString('en-NG');
     }
 
     function render() {
@@ -225,7 +248,7 @@
         list.innerHTML = items.map(function(it) {
             return '<div class="cart-item" data-id="' + it.id + '">' +
                 (it.previewUrl ? '<img src="' + it.previewUrl + '" alt="">' : '') +
-                '<div class="cart-item-info"><div class="cart-item-price">' + it.price + '</div></div>' +
+                '<div class="cart-item-info"><div class="cart-item-price">' + normalizePriceText(it.price || '') + '</div></div>' +
                 '<button type="button" class="cart-item-remove" data-id="' + it.id + '">Remove</button></div>';
         }).join('');
 

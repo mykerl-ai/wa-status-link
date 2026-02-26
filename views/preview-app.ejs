@@ -61,9 +61,10 @@
         }
         .app-content {
             width: 100%;
-            padding: 20px 0 118px;
+            padding: 12px 0 118px;
             max-width: 100vw;
             margin: 0 auto;
+            display: flex;
         }
 
         .immersive-stage {
@@ -72,7 +73,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 12px 0 18px;
+            justify-content: center;
+            flex: 1;
+            min-height: clamp(540px, calc(100dvh - 210px), 760px);
+            padding: 18px 0 24px;
         }
         .stage-head {
             width: 90vw;
@@ -121,8 +125,15 @@
             justify-content: center;
             flex: 0 0 auto;
             min-height: 0;
-            padding-bottom: 176px;
+            padding-bottom: 166px;
             touch-action: pan-y;
+        }
+        @media (max-height: 760px) {
+            .immersive-stage {
+                justify-content: flex-start;
+                min-height: 0;
+                padding-top: 8px;
+            }
         }
         .stack-container {
             position: relative;
@@ -610,6 +621,34 @@
         return isNaN(n) ? 0 : Math.round(n * 100);
     }
 
+    function parseMoneyNumber(value) {
+        if (value == null) return null;
+        var raw = String(value).trim();
+        if (!raw) return null;
+        var cleaned = raw.replace(/[, ]+/g, '').replace(/[^\d.-]/g, '');
+        if (!cleaned || cleaned === '-' || cleaned === '.' || cleaned === '-.') return null;
+        var n = Number(cleaned);
+        if (!Number.isFinite(n) || n <= 0) return null;
+        return n;
+    }
+
+    function normalizePriceText(value) {
+        var raw = String(value || '').trim();
+        if (!raw) return '';
+        var n = parseMoneyNumber(raw);
+        if (n == null) return raw;
+        var hasDecimals = Math.abs(n - Math.round(n)) > 0.0001;
+        return '₦' + n.toLocaleString('en-NG', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: hasDecimals ? 2 : 0
+        });
+    }
+
+    payload.price = normalizePriceText(payload.price || '');
+    shareText = payload.price + '\n' + payload.link;
+    var priceEl = document.querySelector('.card-price-inline');
+    if (priceEl) priceEl.textContent = payload.price || '';
+
     function updateCartBadge() {
         var el = document.getElementById('cartTabBadge');
         if (!el) return;
@@ -669,7 +708,7 @@
         var amountKobo = parsePriceToKobo(payload.price);
         items.push({
             id: payload.id || payload.link || Math.random().toString(36).slice(2),
-            price: payload.price || 'Contact for price',
+            price: normalizePriceText(payload.price || '') || 'Contact for price',
             amountKobo: amountKobo,
             link: payload.link || '',
             previewUrl: payload.previewUrl || ''

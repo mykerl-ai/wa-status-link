@@ -78,7 +78,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 12px 0 18px;
+            justify-content: center;
+            min-height: clamp(540px, calc(100dvh - 220px), 760px);
+            padding: 16px 0 24px;
         }
         .stage-head {
             width: 90vw;
@@ -618,7 +620,7 @@
             if (i === 1) backCards.second = card;
             if (i === 2) backCards.third = card;
             const safeBadge = escapeHtml(item.badgeLabel || '');
-            const safePrice = escapeHtml(item.price || '');
+            const safePrice = escapeHtml(normalizePriceText(item.price || ''));
             const parts = [];
             const s = (v) => (v || '').split(',')[0].trim();
             if (item.categoryName) parts.push(escapeHtml(item.categoryName));
@@ -655,6 +657,29 @@
         const div = document.createElement('div');
         div.textContent = s;
         return div.innerHTML;
+    }
+
+    function parseMoneyNumber(value) {
+        if (value == null) return null;
+        const raw = String(value).trim();
+        if (!raw) return null;
+        const cleaned = raw.replace(/[, ]+/g, '').replace(/[^\d.-]/g, '');
+        if (!cleaned || cleaned === '-' || cleaned === '.' || cleaned === '-.') return null;
+        const n = Number(cleaned);
+        if (!Number.isFinite(n) || n <= 0) return null;
+        return n;
+    }
+
+    function normalizePriceText(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        const n = parseMoneyNumber(raw);
+        if (n == null) return raw;
+        const hasDecimals = Math.abs(n - Math.round(n)) > 0.0001;
+        return '₦' + n.toLocaleString('en-NG', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: hasDecimals ? 2 : 0
+        });
     }
 
     function initSwipe(el) {
@@ -810,7 +835,7 @@
     function copyCurrent() {
         if (currentIndex >= uploadQueue.length) return;
         const item = uploadQueue[currentIndex];
-        const text = item.price + '\n' + item.link;
+        const text = normalizePriceText(item.price || '') + '\n' + item.link;
         navigator.clipboard.writeText(text).then(() => {
             const toast = document.getElementById('copyToast');
             toast.textContent = 'Link copied!';
@@ -827,7 +852,7 @@
     async function shareNextStatus() {
         if (currentIndex >= uploadQueue.length) return;
         const item = uploadQueue[currentIndex];
-        const text = 'Price: ' + item.price + '\n' + item.link;
+        const text = 'Price: ' + normalizePriceText(item.price || '') + '\n' + item.link;
         const toast = document.getElementById('copyToast');
         const wasLast = currentIndex >= uploadQueue.length - 1;
 
@@ -888,7 +913,7 @@
         const amountKobo = item.amountKobo != null ? Number(item.amountKobo) : parsePriceToKobo(item.price);
         items.push({
             id: item.id || item.link || Math.random().toString(36).slice(2),
-            price: item.price || 'Contact for price',
+            price: normalizePriceText(item.price || '') || 'Contact for price',
             amountKobo: amountKobo,
             link: item.link || '',
             previewUrl: item.previewUrl || ''
