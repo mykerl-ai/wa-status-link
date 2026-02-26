@@ -28,13 +28,15 @@ test('buildImageTransformations stays non-destructive and includes optional over
     const transformations = buildImageTransformations({
         shouldRemoveBg: true,
         bgColor: 'white',
-        watermarkText: 'my shop',
-        badgeLabel: 'sale'
+        badgeLabel: 'sale',
+        logoPublicId: 'store-logos/demo-owner/logo-001'
     });
 
     assert.equal(transformations[0].effect, 'background_removal');
     assert.equal(transformations[1].effect, 'improve');
-    assert.ok(transformations.some((step) => step.overlay && step.overlay.text === 'MY SHOP'));
+    assert.ok(transformations.some((step) => step.overlay && step.overlay.public_id === 'store-logos/demo-owner/logo-001'));
+    assert.ok(transformations.some((step) => step.opacity === 88));
+    assert.ok(transformations.some((step) => step.gravity === 'south_east'));
     assert.equal(transformations.some((step) => step.crop === 'limit'), false);
     assert.equal(transformations.some((step) => step.effect === 'trim:12'), false);
 });

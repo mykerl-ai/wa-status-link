@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -66,6 +66,47 @@
             letter-spacing: 0.04em;
             padding: 16px 16px 6px;
         }
+        .list-group-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: -2px 0 8px;
+            padding: 0 4px;
+        }
+        .studio-mode-tabs {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            border-radius: 999px;
+            border: 1px solid rgba(70, 51, 108, 0.12);
+            background: rgba(255, 255, 255, 0.56);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+            margin-bottom: 12px;
+            max-width: 100%;
+        }
+        .studio-mode-tab {
+            border: none;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: transparent;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .studio-mode-tab.active {
+            color: var(--text);
+            background: #fff;
+            box-shadow: 0 6px 12px rgba(44, 31, 69, 0.12);
+        }
+        .studio-pane {
+            display: none;
+        }
+        .studio-pane.active {
+            display: block;
+        }
         .list-row {
             min-height: 44px;
             padding: 10px 16px;
@@ -99,6 +140,31 @@
             outline: none;
         }
         .list-row input[type="text"]::placeholder { color: var(--text-tertiary); }
+        .list-row .app-select {
+            flex: 1;
+            min-width: 0;
+            border: 1px solid transparent;
+            background-color: rgba(255, 255, 255, 0.74);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            font-family: inherit;
+            padding: 9px 34px 9px 12px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236c6180' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px 12px;
+        }
+        .list-row .app-select:focus,
+        .list-row .app-select:focus-visible {
+            outline: none;
+            box-shadow: none;
+            border-color: transparent;
+        }
         .switch-wrap {
             width: 51px;
             height: 31px;
@@ -155,6 +221,183 @@
             background: var(--tint);
             color: #fff;
         }
+        .audio-library-panel {
+            padding: 0 16px 14px;
+        }
+        .audio-library-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .audio-segment {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            border-radius: 999px;
+            border: 1px solid rgba(70, 51, 108, 0.12);
+            background: rgba(255, 255, 255, 0.55);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+            width: fit-content;
+        }
+        .audio-segment-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: transparent;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .audio-segment-btn.active {
+            color: var(--text);
+            background: #fff;
+            box-shadow: 0 6px 12px rgba(44, 31, 69, 0.12);
+        }
+        .audio-search-input {
+            width: 100%;
+            border: 1px solid rgba(69, 50, 105, 0.14);
+            background: rgba(255, 255, 255, 0.78);
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: var(--text);
+            outline: none;
+        }
+        .audio-search-input::placeholder {
+            color: var(--text-tertiary);
+        }
+        .audio-library-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        .audio-library-list {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+        .audio-track-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            padding: 9px;
+            border: 1px solid rgba(62, 44, 96, 0.13);
+            background: linear-gradient(145deg, #ffffff 0%, #f7f3fc 58%, #ece3f8 100%);
+            box-shadow: 0 10px 20px rgba(43, 28, 67, 0.12);
+        }
+        .audio-track-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(80% 120% at 90% -20%, rgba(130, 104, 219, 0.25), transparent 60%);
+            pointer-events: none;
+        }
+        .audio-track-top {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .audio-track-cover {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 8px 14px rgba(24, 16, 39, 0.18);
+            flex-shrink: 0;
+        }
+        .audio-track-meta {
+            flex: 1;
+            min-width: 0;
+        }
+        .audio-track-title {
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .audio-track-sub {
+            margin-top: 1px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .audio-rank-badge {
+            flex-shrink: 0;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #6a59eb 0%, #8f79ff 100%);
+            box-shadow: 0 8px 14px rgba(64, 46, 118, 0.26);
+        }
+        .audio-track-actions {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        .audio-track-link {
+            font-size: 11px;
+            font-weight: 600;
+            text-decoration: none;
+            color: #5f4be2;
+        }
+        .audio-track-use {
+            margin-left: auto;
+        }
+        .audio-track-player {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            margin-top: 6px;
+            height: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.7);
+        }
+        .audio-empty {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 8px 2px;
+        }
+        .audio-toggle-btn {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .audio-toggle-label {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .audio-toggle-caret {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            transition: transform 0.18s ease;
+        }
+        .audio-toggle-btn.open .audio-toggle-caret {
+            transform: rotate(180deg);
+        }
         .list-row-options .option-row { margin-left: auto; }
         .list-group .price-row { border-bottom: 0.5px solid var(--separator); }
         .list-group .price-row:last-child { border-bottom: none; }
@@ -196,7 +439,7 @@
             color: var(--text-secondary);
         }
 
-        /* Result screen â€“ full screen card stack */
+        /* Result screen Ã¢â‚¬â€œ full screen card stack */
         #resultArea {
             display: none;
             position: fixed;
@@ -215,7 +458,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 12px 0 18px;
+            justify-content: center;
+            padding: 16px 0 24px;
         }
         .result-label {
             font-size: 11px;
@@ -394,7 +638,7 @@
             border-radius: 24px;
             background: linear-gradient(180deg, rgba(28,20,44,0) 56%, rgba(28,20,44,0.09) 100%);
         }
-        .stack-header { pointer-events: none; transform: translateY(-34px); padding-left: 2px; }
+        .stack-header { pointer-events: none; transform: translateY(0); padding-left: 2px; margin-bottom: 8px; }
         .stack-footer { pointer-events: auto; transform: translateY(calc(100% + 12px)); }
         .card-details { margin-top: 0; padding: 0 2px; pointer-events: none; }
         .card-title { font-size: 40px; line-height: 1; font-weight: 700; color: var(--text); letter-spacing: -0.03em; }
@@ -506,20 +750,33 @@
             <button type="button" class="option-chip selected" onclick="copyStoreLink()">Copy link</button>
             <a href="<%= storePath %>" class="option-chip selected" style="text-decoration:none;">Open store</a>
         </div>
+        <div class="list-row" style="align-items:flex-start;gap:14px;">
+            <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 6 6 .9-4.5 4.4 1.1 6.2L12 16.8 6.4 19.5l1.1-6.2L3 8.9 9 8z"/></svg>
+            <label style="min-width:88px;">Brand logo</label>
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;flex:1;min-width:0;flex-wrap:wrap;">
+                <% if (store.logoUrl) { %>
+                <img src="<%= store.logoUrl %>" alt="Store logo" style="width:38px;height:38px;border-radius:10px;border:1px solid var(--separator);background:#fff;object-fit:contain;padding:4px;">
+                <% } else { %>
+                <span style="font-size:12px;color:var(--text-secondary);">No logo selected</span>
+                <% } %>
+                <a href="/onboarding/logo?manage=1" class="option-chip selected" style="text-decoration:none;">Change logo</a>
+            </div>
+        </div>
     </div>
     <% } %>
+    <div class="studio-mode-tabs" role="tablist" aria-label="Studio modes">
+        <button type="button" class="studio-mode-tab active" id="studioModeUpload" role="tab" aria-selected="true">Upload products</button>
+        <button type="button" class="studio-mode-tab" id="studioModeVideo" role="tab" aria-selected="false">Generate video</button>
+    </div>
     <form id="bulkForm">
-        <p class="list-group-title">Create</p>
+        <section class="studio-pane active" data-pane="upload" role="tabpanel" aria-labelledby="studioModeUpload">
+        <p class="list-group-title">Product setup</p>
+        <p class="list-group-subtitle">Set background, badge, and default product details for this upload batch.</p>
         <div class="list-group">
             <div class="list-row">
                 <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 <label>Remove background</label>
                 <span class="switch-wrap"><input type="checkbox" id="removeBgToggle" checked></span>
-            </div>
-            <div class="list-row">
-                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-                <label>Watermark</label>
-                <input type="text" id="watermarkInput" placeholder="Optional">
             </div>
             <div class="list-row list-row-options">
                 <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.82-.14 2.66-.4"/><path d="M22 12c0-5.5-4.5-10-10-10"/></svg>
@@ -545,7 +802,7 @@
             <div class="list-row">
                 <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><rect x="8" y="8" width="8" height="8"/></svg>
                 <label>Category</label>
-                <select name="categoryId" id="categorySelect" style="flex:1;min-width:0;border:none;background:transparent;font-size:15px;color:var(--text);font-family:inherit;">
+                <select name="categoryId" id="categorySelect" class="app-select">
                     <option value="">None</option>
                 </select>
             </div>
@@ -560,6 +817,7 @@
             </div>
         </div>
         <p class="list-group-title">Categories</p>
+        <p class="list-group-subtitle">Create category names first so products and videos can be grouped quickly.</p>
         <div class="list-group">
             <div class="list-row" style="flex-wrap:wrap;">
                 <input type="text" id="newCategoryName" placeholder="New category name" style="flex:1;min-width:120px;border:1px solid var(--separator);border-radius:8px;padding:8px 12px;font-size:14px;">
@@ -567,7 +825,78 @@
             </div>
             <div id="categoryList" class="category-list" style="padding:0 16px 12px;font-size:13px;color:var(--text-secondary);"></div>
         </div>
-        <p class="list-group-title">Media</p>
+        </section>
+        <section class="studio-pane" data-pane="video" role="tabpanel" aria-labelledby="studioModeVideo">
+        <p class="list-group-title">Category video</p>
+        <p class="list-group-subtitle">Use this after product links are generated and categories are filled.</p>
+        <div class="list-group">
+            <div class="list-row">
+                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                <label>Category</label>
+                <select id="videoCategorySelect" class="app-select">
+                    <option value="">Select category</option>
+                </select>
+            </div>
+            <div class="list-row">
+                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18h18"/><path d="M3 6h18"/><path d="M7 6v12"/><path d="M17 6v12"/></svg>
+                <label>Transition</label>
+                <select id="videoTransitionSelect" class="app-select">
+                    <option value="fade">Fade</option>
+                    <option value="cut">Cut (no transition)</option>
+                    <option value="slideleft">Slide left</option>
+                    <option value="slideright">Slide right</option>
+                    <option value="wipeleft">Wipe left</option>
+                    <option value="wiperight">Wipe right</option>
+                    <option value="dissolve">Dissolve</option>
+                </select>
+            </div>
+            <div class="list-row">
+                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <label>Audio URL</label>
+                <input type="text" id="videoAudioUrl" placeholder="https://.../track.mp3">
+            </div>
+            <div class="list-row" style="flex-wrap:wrap;align-items:flex-start;gap:8px;">
+                <div style="display:flex;flex-wrap:wrap;gap:8px;width:100%;">
+                    <button type="button" class="option-chip audio-toggle-btn" id="audioLibraryBtn" aria-expanded="false" aria-controls="audioLibraryPanel" aria-label="Toggle songs">
+                        <span class="audio-toggle-label">Naija hits</span>
+                        <svg class="audio-toggle-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <button type="button" class="option-chip" id="audioLibraryRefreshBtn">Refresh songs</button>
+                    <button type="button" class="option-chip" id="clearAudioBtn">Clear audio</button>
+                </div>
+                <span id="selectedAudioLabel" style="font-size:12px;color:var(--text-secondary);width:100%;">No song selected</span>
+            </div>
+            <div id="audioLibraryPanel" class="audio-library-panel" style="display:none;">
+                <div class="audio-library-toolbar">
+                    <div class="audio-segment" role="tablist" aria-label="Song list">
+                        <button type="button" class="audio-segment-btn active" id="audioTabHottest" role="tab" aria-selected="true">Hottest</button>
+                        <button type="button" class="audio-segment-btn" id="audioTabLatest" role="tab" aria-selected="false">Latest</button>
+                        <button type="button" class="audio-segment-btn" id="audioTabThrowback" role="tab" aria-selected="false">Throwback 2010s</button>
+                    </div>
+                    <input type="text" id="audioSearchInput" class="audio-search-input" placeholder="Search by title or artist">
+                </div>
+                <div id="audioLibraryStatus" class="audio-library-status"></div>
+                <div id="audioLibraryList" class="audio-library-list"></div>
+            </div>
+            <div class="list-row">
+                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                <label>Transition sec</label>
+                <input type="text" id="videoTransitionDuration" value="0.5" inputmode="decimal" placeholder="0.5">
+            </div>
+            <div class="list-row" style="flex-wrap:wrap;gap:8px;">
+                <button type="button" class="option-chip selected" id="generateVideoBtn">Generate video</button>
+                <span id="videoStatus" style="font-size:13px;color:var(--text-secondary);"></span>
+            </div>
+            <div id="videoResult" style="padding:0 16px 12px;display:none;">
+                <a id="videoResultLink" href="#" target="_blank" rel="noopener" style="font-size:14px;color:var(--tint);font-weight:600;">Open video</a>
+            </div>
+        </div>
+        </section>
+        <section class="studio-pane active" data-pane="upload" role="tabpanel" aria-labelledby="studioModeUpload">
+        <p class="list-group-title">Media and links</p>
+        <p class="list-group-subtitle">Upload photos/videos, set prices, and generate all product links in one go.</p>
         <div class="list-group">
             <label class="list-row list-row-file" style="cursor:pointer;position:relative;">
                 <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -580,6 +909,7 @@
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/><path d="M5 21l2-6 4 2-2 6"/><path d="M19 21l-2-6-4 2 2 6"/></svg>
             Generate links
         </button>
+        </section>
     </form>
     <div id="loading">Processing...</div>
 </main>
@@ -655,16 +985,29 @@
     }
     function renderCategorySelect() {
         const sel = document.getElementById('categorySelect');
-        if (!sel) return;
-        const current = sel.value;
-        sel.innerHTML = '<option value="">None</option>';
-        categories.forEach(function(c) {
-            const opt = document.createElement('option');
-            opt.value = c.id;
-            opt.textContent = c.name;
-            sel.appendChild(opt);
-        });
-        if (current && categories.some(function(c) { return c.id === current; })) sel.value = current;
+        const videoSel = document.getElementById('videoCategorySelect');
+        if (sel) {
+            const current = sel.value;
+            sel.innerHTML = '<option value="">None</option>';
+            categories.forEach(function(c) {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                sel.appendChild(opt);
+            });
+            if (current && categories.some(function(c) { return c.id === current; })) sel.value = current;
+        }
+        if (videoSel) {
+            const vCur = videoSel.value;
+            videoSel.innerHTML = '<option value="">Select category</option>';
+            categories.forEach(function(c) {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                videoSel.appendChild(opt);
+            });
+            if (vCur && categories.some(function(c) { return c.id === vCur; })) videoSel.value = vCur;
+        }
     }
     function renderCategoryList() {
         const el = document.getElementById('categoryList');
@@ -726,6 +1069,682 @@
     }
 
     loadCategories();
+
+    (function setupStudioModeTabs() {
+        const uploadTab = document.getElementById('studioModeUpload');
+        const videoTab = document.getElementById('studioModeVideo');
+        const panes = Array.from(document.querySelectorAll('.studio-pane[data-pane]'));
+        if (!uploadTab || !videoTab || !panes.length) return;
+
+        function setMode(mode) {
+            const nextMode = mode === 'video' ? 'video' : 'upload';
+            uploadTab.classList.toggle('active', nextMode === 'upload');
+            uploadTab.setAttribute('aria-selected', nextMode === 'upload' ? 'true' : 'false');
+            videoTab.classList.toggle('active', nextMode === 'video');
+            videoTab.setAttribute('aria-selected', nextMode === 'video' ? 'true' : 'false');
+            panes.forEach(function(pane) {
+                const isActive = pane.getAttribute('data-pane') === nextMode;
+                pane.classList.toggle('active', isActive);
+            });
+        }
+
+        uploadTab.addEventListener('click', function() { setMode('upload'); });
+        videoTab.addEventListener('click', function() { setMode('video'); });
+        setMode('upload');
+    })();
+
+    (function setupVideoGenerator() {
+        const btn = document.getElementById('generateVideoBtn');
+        const sel = document.getElementById('videoCategorySelect');
+        const transitionSel = document.getElementById('videoTransitionSelect');
+        const audioInput = document.getElementById('videoAudioUrl');
+        const transitionDurationInput = document.getElementById('videoTransitionDuration');
+        const audioLibraryBtn = document.getElementById('audioLibraryBtn');
+        const audioLibraryRefreshBtn = document.getElementById('audioLibraryRefreshBtn');
+        const clearAudioBtn = document.getElementById('clearAudioBtn');
+        const selectedAudioLabel = document.getElementById('selectedAudioLabel');
+        const audioLibraryPanel = document.getElementById('audioLibraryPanel');
+        const audioLibraryStatus = document.getElementById('audioLibraryStatus');
+        const audioLibraryList = document.getElementById('audioLibraryList');
+        const audioTabHottest = document.getElementById('audioTabHottest');
+        const audioTabLatest = document.getElementById('audioTabLatest');
+        const audioTabThrowback = document.getElementById('audioTabThrowback');
+        const audioSearchInput = document.getElementById('audioSearchInput');
+        const statusEl = document.getElementById('videoStatus');
+        const resultEl = document.getElementById('videoResult');
+        const resultLink = document.getElementById('videoResultLink');
+        if (!btn || !sel || !statusEl || !resultEl || !resultLink) return;
+
+        const defaultButtonLabel = btn.textContent;
+
+        let pollInterval = null;
+        let audioPanelOpen = false;
+        let audioTracksLoading = false;
+        let audioCollections = { hottest: [], latest: [], throwback: [] };
+        let activeAudioBucket = 'hottest';
+        const PINNED_THROWBACK_MATCH = {
+            titleIncludes: 'good feeling',
+            artistIncludes: 'flo rida'
+        };
+
+        function setButtonBusy(isBusy) {
+            btn.disabled = isBusy;
+            btn.textContent = isBusy ? 'Generating...' : defaultButtonLabel;
+        }
+        function setVideoStatus(message, type) {
+            statusEl.textContent = message || '';
+            if (type === 'error') {
+                statusEl.style.color = '#b42318';
+                return;
+            }
+            if (type === 'success') {
+                statusEl.style.color = '#12703a';
+                return;
+            }
+            statusEl.style.color = 'var(--text-secondary)';
+        }
+        function setAudioButtonsBusy(isBusy) {
+            if (audioLibraryBtn) audioLibraryBtn.disabled = isBusy;
+            if (audioLibraryRefreshBtn) audioLibraryRefreshBtn.disabled = isBusy;
+        }
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+        function formatDuration(seconds) {
+            const n = Number(seconds);
+            if (!Number.isFinite(n) || n <= 0) return '';
+            const total = Math.round(n);
+            const mins = Math.floor(total / 60);
+            const secs = total % 60;
+            return mins + ':' + String(secs).padStart(2, '0');
+        }
+        function formatReleaseDate(value) {
+            if (!value) return '';
+            const date = new Date(value);
+            if (isNaN(date.getTime())) return '';
+            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+        function parseReleaseYear(value) {
+            if (!value) return 0;
+            const date = new Date(value);
+            if (isNaN(date.getTime())) return 0;
+            return date.getUTCFullYear();
+        }
+        function isPinnedThrowbackTrack(track) {
+            if (!track) return false;
+            const title = String(track.title || '').toLowerCase();
+            const artist = String(track.artist || '').toLowerCase();
+            return title.includes(PINNED_THROWBACK_MATCH.titleIncludes) && artist.includes(PINNED_THROWBACK_MATCH.artistIncludes);
+        }
+        function isFreshRelease(value) {
+            if (!value) return false;
+            const date = new Date(value);
+            if (isNaN(date.getTime())) return false;
+            const ageMs = Date.now() - date.getTime();
+            return ageMs >= 0 && ageMs <= (35 * 24 * 60 * 60 * 1000);
+        }
+        function mapItunesFallbackTrack(item, index) {
+            if (!item || !item.previewUrl || !/^https?:\/\//i.test(item.previewUrl)) return null;
+            const releaseDate = item.releaseDate || '';
+            return {
+                id: String(item.trackId || item.collectionId || item.previewUrl),
+                title: item.trackName || item.collectionName || 'Untitled',
+                artist: item.artistName || 'Unknown artist',
+                album: item.collectionName || '',
+                previewUrl: item.previewUrl,
+                artworkUrl: (item.artworkUrl100 || item.artworkUrl60 || item.artworkUrl30 || '').replace(/\/\d+x\d+bb\.(png|jpg)$/i, '/600x600bb.$1'),
+                pageUrl: item.trackViewUrl || item.collectionViewUrl || item.artistViewUrl || '',
+                releaseDate: releaseDate,
+                releaseYear: parseReleaseYear(releaseDate),
+                durationSeconds: Number.isFinite(Number(item.trackTimeMillis)) ? Math.round(Number(item.trackTimeMillis) / 1000) : null,
+                rank: index + 1,
+                source: 'iTunes Search (Client)'
+            };
+        }
+        async function fetchClientItunesFallback(searchTerm, limit, options) {
+            try {
+                const query = new URLSearchParams();
+                query.set('term', searchTerm || 'nigeria top songs');
+                query.set('country', (options && options.country) ? String(options.country).toUpperCase() : 'NG');
+                query.set('entity', 'song');
+                query.set('limit', String(limit || 16));
+                const res = await fetch('https://itunes.apple.com/search?' + query.toString(), { cache: 'no-store' });
+                const data = await res.json();
+                const rows = Array.isArray(data && data.results) ? data.results : [];
+                const sourceLabel = (options && options.sourceLabel) ? String(options.sourceLabel) : 'iTunes Search (Client)';
+                return rows.map(function(item, idx) {
+                    const track = mapItunesFallbackTrack(item, idx);
+                    if (!track) return null;
+                    track.source = sourceLabel;
+                    return track;
+                }).filter(Boolean);
+            } catch (e) {
+                return [];
+            }
+        }
+        function getAllTracks() {
+            const merged = [];
+            const seen = new Set();
+            ['hottest', 'latest', 'throwback'].forEach(function(bucket) {
+                (audioCollections[bucket] || []).forEach(function(track) {
+                    if (!track || !track.previewUrl) return;
+                    const key = track.id || track.previewUrl;
+                    if (seen.has(key)) return;
+                    seen.add(key);
+                    merged.push(track);
+                });
+            });
+            return merged;
+        }
+        function getVisibleTracks() {
+            const tracks = Array.isArray(audioCollections[activeAudioBucket]) ? audioCollections[activeAudioBucket] : [];
+            const tokens = String((audioSearchInput && audioSearchInput.value) || '')
+                .toLowerCase()
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 4);
+            if (!tokens.length) return tracks;
+            return tracks.filter(function(track) {
+                const haystack = ((track.title || '') + ' ' + (track.artist || '') + ' ' + (track.album || '')).toLowerCase();
+                return tokens.every(function(token) { return haystack.includes(token); });
+            });
+        }
+        async function ensurePinnedThrowbackTrack() {
+            if ((audioCollections.throwback || []).some(function(track) { return isPinnedThrowbackTrack(track); })) {
+                return;
+            }
+            const fallbackTracks = await fetchClientItunesFallback('Flo Rida Good Feeling', 15, {
+                country: 'US',
+                sourceLabel: 'Featured Throwback'
+            });
+            const pinnedTrack = fallbackTracks.find(function(track) { return isPinnedThrowbackTrack(track); }) || fallbackTracks[0] || null;
+            if (!pinnedTrack) return;
+            const key = pinnedTrack.id || pinnedTrack.previewUrl;
+            const deduped = (audioCollections.throwback || []).filter(function(track) {
+                return (track.id || track.previewUrl) !== key;
+            });
+            audioCollections.throwback = [pinnedTrack].concat(deduped).slice(0, 25);
+        }
+        function pauseAudioPreviews(exceptEl) {
+            if (!audioLibraryList) return;
+            audioLibraryList.querySelectorAll('audio').forEach(function(player) {
+                if (player !== exceptEl) player.pause();
+            });
+        }
+        function getSelectedAudioUrl() {
+            return (audioInput && audioInput.value ? audioInput.value.trim() : '');
+        }
+        function updateAudioLibraryButtonState() {
+            if (!audioLibraryBtn) return;
+            const hasSelectedAudio = !!getSelectedAudioUrl();
+            audioLibraryBtn.classList.toggle('selected', audioPanelOpen);
+            audioLibraryBtn.classList.toggle('open', audioPanelOpen);
+            audioLibraryBtn.setAttribute('aria-expanded', audioPanelOpen ? 'true' : 'false');
+            audioLibraryBtn.setAttribute(
+                'aria-label',
+                audioPanelOpen ? 'Collapse songs' : (hasSelectedAudio ? 'Expand songs to change selection' : 'Expand songs')
+            );
+        }
+        function scrollGenerateButtonIntoView() {
+            if (!btn) return;
+            setTimeout(function() {
+                btn.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            }, 120);
+        }
+        function setSelectedAudioLabelValue(track) {
+            const value = getSelectedAudioUrl();
+            if (!selectedAudioLabel) {
+                updateAudioLibraryButtonState();
+                return;
+            }
+            if (!value) {
+                selectedAudioLabel.textContent = 'No song selected';
+                updateAudioLibraryButtonState();
+                return;
+            }
+            if (track && track.title) {
+                selectedAudioLabel.textContent = 'Selected: ' + track.title + (track.artist ? ' - ' + track.artist : '');
+                updateAudioLibraryButtonState();
+                return;
+            }
+            const matched = getAllTracks().find(function(item) {
+                return item.previewUrl === value;
+            });
+            if (matched) {
+                selectedAudioLabel.textContent = 'Selected: ' + matched.title + (matched.artist ? ' - ' + matched.artist : '');
+            } else {
+                selectedAudioLabel.textContent = 'Selected custom audio URL';
+            }
+            updateAudioLibraryButtonState();
+        }
+        function updateAudioTabState() {
+            if (audioTabHottest) {
+                const isActive = activeAudioBucket === 'hottest';
+                audioTabHottest.classList.toggle('active', isActive);
+                audioTabHottest.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            }
+            if (audioTabLatest) {
+                const isActive = activeAudioBucket === 'latest';
+                audioTabLatest.classList.toggle('active', isActive);
+                audioTabLatest.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            }
+            if (audioTabThrowback) {
+                const isActive = activeAudioBucket === 'throwback';
+                audioTabThrowback.classList.toggle('active', isActive);
+                audioTabThrowback.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            }
+        }
+        function showAudioPanel(shouldShow, options) {
+            if (!audioLibraryPanel) return;
+            audioPanelOpen = !!shouldShow;
+            audioLibraryPanel.style.display = audioPanelOpen ? 'block' : 'none';
+            updateAudioLibraryButtonState();
+            if (!audioPanelOpen) pauseAudioPreviews(null);
+            if (!audioPanelOpen && options && options.scrollToGenerate) {
+                scrollGenerateButtonIntoView();
+            }
+        }
+        function setAudioStatus(message) {
+            if (audioLibraryStatus) audioLibraryStatus.textContent = message;
+        }
+        function renderAudioTracks() {
+            if (!audioLibraryList) return;
+            audioLibraryList.innerHTML = '';
+            const tracks = getVisibleTracks();
+            const selectedUrl = (audioInput && audioInput.value ? audioInput.value.trim() : '');
+            if (!tracks.length) {
+                const empty = document.createElement('div');
+                empty.className = 'audio-empty';
+                empty.textContent = audioTracksLoading ? 'Loading songs...' : 'No matching songs right now.';
+                audioLibraryList.appendChild(empty);
+                return;
+            }
+
+            tracks.forEach(function(track, index) {
+                const card = document.createElement('div');
+                card.className = 'audio-track-card';
+
+                const top = document.createElement('div');
+                top.className = 'audio-track-top';
+
+                const cover = document.createElement('img');
+                cover.className = 'audio-track-cover';
+                cover.src = track.artworkUrl || '';
+                cover.alt = (track.title || 'Song') + ' artwork';
+                cover.loading = 'lazy';
+
+                const meta = document.createElement('div');
+                meta.className = 'audio-track-meta';
+
+                const title = document.createElement('div');
+                title.className = 'audio-track-title';
+                title.textContent = track.title || 'Untitled';
+
+                const sub = document.createElement('div');
+                sub.className = 'audio-track-sub';
+                const durationText = formatDuration(track.durationSeconds);
+                const releaseText = formatReleaseDate(track.releaseDate);
+                const pieces = [];
+                if (track.artist) pieces.push(track.artist);
+                if (durationText) pieces.push(durationText);
+                if (releaseText) pieces.push(releaseText);
+                sub.textContent = pieces.join(' â€¢ ') || 'Nigerian chart song';
+
+                meta.appendChild(title);
+                meta.appendChild(sub);
+
+                const badge = document.createElement('div');
+                badge.className = 'audio-rank-badge';
+                if (activeAudioBucket === 'hottest') {
+                    const rank = Number(track.rank || 0) || (index + 1);
+                    badge.textContent = '#' + rank;
+                } else if (activeAudioBucket === 'throwback') {
+                    if (isPinnedThrowbackTrack(track)) {
+                        badge.textContent = 'PICK';
+                    } else {
+                        const year = Number(track.releaseYear || parseReleaseYear(track.releaseDate) || 0);
+                        badge.textContent = year >= 2010 && year <= 2019 ? String(year) : '2010s';
+                    }
+                } else {
+                    badge.textContent = isFreshRelease(track.releaseDate) ? 'NEW' : 'LATEST';
+                }
+
+                top.appendChild(cover);
+                top.appendChild(meta);
+                top.appendChild(badge);
+
+                const actions = document.createElement('div');
+                actions.className = 'audio-track-actions';
+
+                const sourceLink = document.createElement('a');
+                sourceLink.className = 'audio-track-link';
+                sourceLink.href = track.pageUrl || '#';
+                sourceLink.target = '_blank';
+                sourceLink.rel = 'noopener';
+                sourceLink.textContent = 'Open in Apple Music';
+                if (!track.pageUrl) {
+                    sourceLink.style.opacity = '0.5';
+                    sourceLink.style.pointerEvents = 'none';
+                }
+                actions.appendChild(sourceLink);
+
+                const useBtn = document.createElement('button');
+                useBtn.type = 'button';
+                useBtn.className = 'option-chip audio-track-use';
+                const isSelected = !!selectedUrl && selectedUrl === track.previewUrl;
+                if (isSelected) useBtn.classList.add('selected');
+                useBtn.textContent = isSelected ? 'Selected' : 'Use';
+                useBtn.addEventListener('click', function() {
+                    if (audioInput) audioInput.value = track.previewUrl || '';
+                    setSelectedAudioLabelValue(track);
+                    renderAudioTracks();
+                    setAudioStatus('Song selected. Ready to generate.');
+                    showAudioPanel(false, { scrollToGenerate: true });
+                });
+                actions.appendChild(useBtn);
+
+                const preview = document.createElement('audio');
+                preview.className = 'audio-track-player';
+                preview.controls = true;
+                preview.preload = 'none';
+                preview.src = track.previewUrl || '';
+                preview.addEventListener('play', function() {
+                    pauseAudioPreviews(preview);
+                });
+
+                card.appendChild(top);
+                card.appendChild(actions);
+                card.appendChild(preview);
+                audioLibraryList.appendChild(card);
+            });
+        }
+        async function loadAudioTracks(forceRefresh) {
+            if (audioTracksLoading) return;
+            audioTracksLoading = true;
+            setAudioButtonsBusy(true);
+            setAudioStatus('Fetching hottest Nigerian songs...');
+            renderAudioTracks();
+            try {
+                const query = new URLSearchParams();
+                query.set('limit', '16');
+                if (forceRefresh) query.set('refresh', '1');
+                const searchTerm = String((audioSearchInput && audioSearchInput.value) || '').trim();
+                if (searchTerm.length >= 2) query.set('q', searchTerm);
+                query.set('_ts', String(Date.now()));
+                let data = null;
+                let lastError = null;
+                const endpoints = ['/api/hot-naija-songs', '/api/free-audio-tracks'];
+                for (const endpoint of endpoints) {
+                    try {
+                        const res = await fetch(endpoint + '?' + query.toString(), {
+                            credentials: 'same-origin',
+                            cache: 'no-store'
+                        });
+                        const body = await res.json();
+                        if (!res.ok) {
+                            throw new Error(body.error || 'Could not fetch songs');
+                        }
+                        data = body;
+                        break;
+                    } catch (err) {
+                        lastError = err;
+                    }
+                }
+                if (!data) throw lastError || new Error('Could not fetch songs');
+
+                const hottest = Array.isArray(data.hottestTracks)
+                    ? data.hottestTracks
+                    : (Array.isArray(data.tracks) ? data.tracks : []);
+                const latest = Array.isArray(data.latestTracks)
+                    ? data.latestTracks
+                    : (Array.isArray(data.tracks) ? data.tracks : []);
+                const throwback = Array.isArray(data.nostalgicTracks)
+                    ? data.nostalgicTracks
+                    : (Array.isArray(data.throwbackTracks) ? data.throwbackTracks : []);
+                audioCollections.hottest = hottest.filter(function(track) {
+                    const sourceText = String(track && track.source || '');
+                    return track
+                        && track.previewUrl
+                        && /^https?:\/\//i.test(track.previewUrl)
+                        && !/internet archive/i.test(sourceText);
+                });
+                audioCollections.latest = latest.filter(function(track) {
+                    const sourceText = String(track && track.source || '');
+                    return track
+                        && track.previewUrl
+                        && /^https?:\/\//i.test(track.previewUrl)
+                        && !/internet archive/i.test(sourceText);
+                });
+                audioCollections.throwback = throwback.filter(function(track) {
+                    const sourceText = String(track && track.source || '');
+                    return track
+                        && track.previewUrl
+                        && /^https?:\/\//i.test(track.previewUrl)
+                        && !/internet archive/i.test(sourceText);
+                });
+                if (!audioCollections.throwback.length) {
+                    const mergedBase = []
+                        .concat(audioCollections.hottest || [])
+                        .concat(audioCollections.latest || []);
+                    audioCollections.throwback = mergedBase.filter(function(track) {
+                        const year = Number(track && (track.releaseYear || parseReleaseYear(track.releaseDate)) || 0);
+                        return track && track.previewUrl && year >= 2010 && year <= 2019;
+                    }).slice(0, 16);
+                }
+                if (!audioCollections.throwback.length) {
+                    const throwbackTerm = searchTerm
+                        ? (searchTerm + ' 2010s throwback')
+                        : '2010s throwback hits chris brown flo rida pitbull';
+                    const throwbackClientTracks = await fetchClientItunesFallback(throwbackTerm, 18, {
+                        country: 'US',
+                        sourceLabel: 'iTunes Search (Throwback Client)'
+                    });
+                    audioCollections.throwback = throwbackClientTracks.filter(function(track) {
+                        const year = Number(track && (track.releaseYear || parseReleaseYear(track.releaseDate)) || 0);
+                        return track && track.previewUrl && (year === 0 || (year >= 2010 && year <= 2019));
+                    }).slice(0, 16);
+                }
+                if (!audioCollections.hottest.length && !audioCollections.latest.length && !audioCollections.throwback.length) {
+                    const fallbackTerm = searchTerm || 'nigeria top songs';
+                    const fallbackTracks = await fetchClientItunesFallback(fallbackTerm, 16, { country: 'NG' });
+                    audioCollections.hottest = fallbackTracks.slice(0, 16);
+                    audioCollections.latest = fallbackTracks
+                        .slice()
+                        .sort(function(a, b) {
+                            return new Date(b.releaseDate || 0).getTime() - new Date(a.releaseDate || 0).getTime();
+                        })
+                        .slice(0, 16);
+                    audioCollections.throwback = fallbackTracks
+                        .filter(function(track) {
+                            const year = new Date(track.releaseDate || '').getUTCFullYear();
+                            return year >= 2010 && year <= 2019;
+                        })
+                        .slice(0, 16);
+                }
+                await ensurePinnedThrowbackTrack();
+
+                if (!audioCollections[activeAudioBucket].length) {
+                    if (audioCollections.hottest.length) activeAudioBucket = 'hottest';
+                    else if (audioCollections.latest.length) activeAudioBucket = 'latest';
+                    else activeAudioBucket = 'throwback';
+                }
+                updateAudioTabState();
+                renderAudioTracks();
+                const sourceLabel = data.source || (audioCollections.hottest.length ? 'iTunes Search' : 'Song feed');
+                const activeCount = getVisibleTracks().length;
+                setAudioStatus(sourceLabel + ' â€¢ ' + activeCount + ' songs');
+                setSelectedAudioLabelValue(null);
+            } catch (e) {
+                audioCollections = { hottest: [], latest: [], throwback: [] };
+                renderAudioTracks();
+                setAudioStatus(e.message || 'Could not fetch songs right now.');
+            } finally {
+                audioTracksLoading = false;
+                setAudioButtonsBusy(false);
+            }
+        }
+        function parseTransitionDuration() {
+            const raw = (transitionDurationInput && transitionDurationInput.value ? transitionDurationInput.value : '0.5').trim();
+            const parsed = Number(raw);
+            if (!Number.isFinite(parsed)) return 0.5;
+            return Math.max(0, Math.min(2.5, parsed));
+        }
+        function syncTransitionDurationState() {
+            if (!transitionSel || !transitionDurationInput) return;
+            const isCut = transitionSel.value === 'cut';
+            transitionDurationInput.disabled = isCut;
+            if (isCut) transitionDurationInput.value = '0';
+            else if (!Number.isFinite(Number(transitionDurationInput.value)) || Number(transitionDurationInput.value) <= 0) transitionDurationInput.value = '0.5';
+        }
+        if (transitionSel && transitionDurationInput) {
+            transitionSel.addEventListener('change', syncTransitionDurationState);
+            syncTransitionDurationState();
+        }
+        if (audioTabHottest) {
+            audioTabHottest.addEventListener('click', function() {
+                activeAudioBucket = 'hottest';
+                updateAudioTabState();
+                renderAudioTracks();
+            });
+        }
+        if (audioTabLatest) {
+            audioTabLatest.addEventListener('click', function() {
+                activeAudioBucket = 'latest';
+                updateAudioTabState();
+                renderAudioTracks();
+            });
+        }
+        if (audioTabThrowback) {
+            audioTabThrowback.addEventListener('click', function() {
+                activeAudioBucket = 'throwback';
+                updateAudioTabState();
+                renderAudioTracks();
+            });
+        }
+        if (audioSearchInput) {
+            audioSearchInput.addEventListener('input', function() {
+                renderAudioTracks();
+            });
+        }
+        if (audioInput) {
+            audioInput.addEventListener('input', function() {
+                setSelectedAudioLabelValue(null);
+                renderAudioTracks();
+            });
+            setSelectedAudioLabelValue(null);
+        }
+        updateAudioTabState();
+        setVideoStatus('', 'default');
+        setAudioStatus('Loading songs...');
+        loadAudioTracks(false);
+        if (audioLibraryBtn) {
+            audioLibraryBtn.addEventListener('click', async function() {
+                const shouldOpen = !audioPanelOpen;
+                showAudioPanel(shouldOpen);
+                if (shouldOpen && !audioCollections.hottest.length && !audioCollections.latest.length && !audioCollections.throwback.length) {
+                    await loadAudioTracks(false);
+                }
+            });
+        }
+        if (audioLibraryRefreshBtn) {
+            audioLibraryRefreshBtn.addEventListener('click', async function() {
+                showAudioPanel(true);
+                await loadAudioTracks(true);
+            });
+        }
+        if (clearAudioBtn) {
+            clearAudioBtn.addEventListener('click', function() {
+                if (audioInput) audioInput.value = '';
+                setSelectedAudioLabelValue(null);
+                renderAudioTracks();
+            });
+        }
+        if (sel) {
+            sel.addEventListener('change', function() {
+                if (sel.value) setVideoStatus('', 'default');
+            });
+        }
+
+        function pollJob(jobId) {
+            stopPolling();
+            pollInterval = setInterval(async function() {
+                try {
+                    const res = await fetch('/api/generate-category-video/' + jobId, { credentials: 'same-origin' });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        setVideoStatus(data.error || 'Error', 'error');
+                        stopPolling();
+                        setButtonBusy(false);
+                        return;
+                    }
+                    if (data.status === 'pending') {
+                        setVideoStatus('Queued...');
+                    } else if (data.status === 'processing') {
+                        setVideoStatus('Generating... ' + (data.progress || 0) + '%');
+                    } else if (data.status === 'completed') {
+                        stopPolling();
+                        setVideoStatus('Done!', 'success');
+                        resultEl.style.display = 'block';
+                        resultLink.href = data.videoUrl;
+                        resultLink.textContent = 'Open video';
+                        setButtonBusy(false);
+                    } else if (data.status === 'failed') {
+                        stopPolling();
+                        setVideoStatus('Failed: ' + (data.error || 'Unknown error'), 'error');
+                        setButtonBusy(false);
+                    }
+                } catch (e) {
+                    setVideoStatus('Error checking status', 'error');
+                    stopPolling();
+                    setButtonBusy(false);
+                }
+            }, 1500);
+        }
+
+        btn.addEventListener('click', async function() {
+            const catId = (sel && sel.value) || '';
+            if (!catId) {
+                setVideoStatus('Please select a category before generating.', 'error');
+                if (sel && typeof sel.focus === 'function') sel.focus();
+                return;
+            }
+            const transitionType = (transitionSel && transitionSel.value) ? transitionSel.value : 'fade';
+            const fadeDuration = transitionType === 'cut' ? 0 : parseTransitionDuration();
+            const audioUrl = (audioInput && audioInput.value ? audioInput.value : '').trim();
+            setButtonBusy(true);
+            setVideoStatus('Starting...');
+            resultEl.style.display = 'none';
+            try {
+                const payload = {
+                    categoryId: catId,
+                    transitionType: transitionType,
+                    fadeDuration: fadeDuration
+                };
+                if (audioUrl) payload.audioUrl = audioUrl;
+                const res = await fetch('/api/generate-category-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    credentials: 'same-origin'
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    setVideoStatus(data.error || 'Failed to start', 'error');
+                    setButtonBusy(false);
+                    return;
+                }
+                setVideoStatus('Queued...');
+                pollJob(data.jobId);
+            } catch (e) {
+                setVideoStatus('Request failed', 'error');
+                setButtonBusy(false);
+            }
+        });
+    })();
     document.getElementById('addCategoryBtn').addEventListener('click', async function() {
         const input = document.getElementById('newCategoryName');
         const name = (input && input.value || '').trim();
@@ -764,6 +1783,46 @@
         });
     });
 
+    function parseMoneyNumber(value) {
+        if (value == null) return null;
+        var raw = String(value).trim();
+        if (!raw) return null;
+        var cleaned = raw.replace(/[, ]+/g, '').replace(/[^\d.-]/g, '');
+        if (!cleaned || cleaned === '-' || cleaned === '.' || cleaned === '-.') return null;
+        var n = Number(cleaned);
+        if (!Number.isFinite(n) || n <= 0) return null;
+        return n;
+    }
+
+    function formatNairaLabel(value) {
+        var n = parseMoneyNumber(value);
+        if (n == null) return String(value || '').trim();
+        var hasDecimals = Math.abs(n - Math.round(n)) > 0.0001;
+        return '₦' + n.toLocaleString('en-NG', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: hasDecimals ? 2 : 0
+        });
+    }
+
+    function normalizePriceText(value) {
+        var raw = String(value || '').trim();
+        if (!raw) return '';
+        var formatted = formatNairaLabel(raw);
+        return formatted || raw;
+    }
+
+    function attachPriceInputFormatter(input) {
+        if (!input) return;
+        input.addEventListener('focus', function() {
+            var n = parseMoneyNumber(input.value);
+            if (n == null) return;
+            input.value = String(n);
+        });
+        input.addEventListener('blur', function() {
+            input.value = normalizePriceText(input.value);
+        });
+    }
+
     // Logic to show Thumbnail + Price Input
     document.getElementById('fileInput').onchange = (e) => {
         const container = document.getElementById('priceInputs');
@@ -790,8 +1849,9 @@
             const input = document.createElement('input');
             input.type = 'text';
             input.name = 'prices';
-            input.placeholder = `Price...`;
+            input.placeholder = `Price (e.g. ₦32,000)`;
             input.required = true;
+            attachPriceInputFormatter(input);
             row.appendChild(media);
             row.appendChild(input);
             container.appendChild(row);
@@ -807,14 +1867,14 @@
         btn.textContent = 'Generating...';
         loader.style.display = 'block';
 
+        Array.from(e.target.querySelectorAll('input[name="prices"]')).forEach(function(inputEl) {
+            inputEl.value = normalizePriceText(inputEl.value);
+        });
         const formData = new FormData(e.target);
         formData.append('removeBg', document.getElementById('removeBgToggle').checked);
-        formData.append('watermarkText', document.getElementById('watermarkInput').value);
         formData.append('size', (document.getElementById('productSize') && document.getElementById('productSize').value) || '');
         formData.append('color', (document.getElementById('productColor') && document.getElementById('productColor').value) || '');
         formData.append('qty', (document.getElementById('productQty') && document.getElementById('productQty').value) || '');
-        const catSel = document.getElementById('categorySelect');
-        if (catSel && catSel.value) formData.append('categoryId', catSel.value);
 
         try {
             const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
@@ -823,7 +1883,13 @@
                 throw new Error((data && data.error) || 'Upload failed');
             }
 
-            uploadQueue = data.items;
+            uploadQueue = (Array.isArray(data.items) ? data.items : []).map(function(item) {
+                if (!item) return item;
+                return {
+                    ...item,
+                    price: normalizePriceText(item.price || '')
+                };
+            });
             currentIndex = 0;
             document.querySelector('body > main').style.display = 'none';
             document.getElementById('resultArea').style.display = 'flex';
@@ -903,7 +1969,7 @@
             if (i === 1) backCards.second = card;
             if (i === 2) backCards.third = card;
             const safeBadge = escapeHtml(item.badgeLabel || '');
-            const safePrice = escapeHtml(item.price || '');
+            const safePrice = escapeHtml(normalizePriceText(item.price || ''));
             card.innerHTML = `
                 <div class="card-image-fill">
                     <img class="card-image-bg" src="${escapeHtml(item.previewUrl)}" alt="" aria-hidden="true">
@@ -1049,7 +2115,7 @@
     function copyCurrent() {
         if (currentIndex >= uploadQueue.length) return;
         const item = uploadQueue[currentIndex];
-        const text = item.price + '\n' + item.link;
+        const text = normalizePriceText(item.price || '') + '\n' + item.link;
         navigator.clipboard.writeText(text).then(() => {
             const toast = document.getElementById('copyToast');
             toast.textContent = 'Link copied';
@@ -1066,7 +2132,7 @@
     async function shareNextStatus() {
         if (currentIndex >= uploadQueue.length) return;
         const item = uploadQueue[currentIndex];
-        const text = 'Price: ' + item.price + '\n' + item.link;
+        const text = 'Price: ' + normalizePriceText(item.price || '') + '\n' + item.link;
         const toast = document.getElementById('copyToast');
         const wasLast = currentIndex >= uploadQueue.length - 1;
 
@@ -1126,7 +2192,7 @@
         const amountKobo = item.amountKobo != null ? Number(item.amountKobo) : parsePriceToKobo(item.price);
         items.push({
             id: item.id || item.link || Math.random().toString(36).slice(2),
-            price: item.price || 'Contact for price',
+            price: normalizePriceText(item.price || '') || 'Contact for price',
             amountKobo: amountKobo,
             link: item.link || '',
             previewUrl: item.previewUrl || ''
@@ -1158,3 +2224,5 @@
 </script>
 </body>
 </html>
+
+

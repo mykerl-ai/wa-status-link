@@ -39,6 +39,8 @@ create table if not exists public.stores (
   owner_id uuid not null unique references auth.users(id) on delete cascade,
   slug text not null unique,
   name text not null default 'My Store',
+  logo_public_id text,
+  logo_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint stores_slug_format check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$')
@@ -50,6 +52,10 @@ alter table public.stores
   add column if not exists slug text;
 alter table public.stores
   add column if not exists name text not null default 'My Store';
+alter table public.stores
+  add column if not exists logo_public_id text;
+alter table public.stores
+  add column if not exists logo_url text;
 alter table public.stores
   add column if not exists created_at timestamptz not null default now();
 alter table public.stores
@@ -143,6 +149,47 @@ create policy "categories_delete_owner"
   using (auth.uid() = owner_id);
 
 create index if not exists categories_owner_id_idx on public.categories(owner_id);
+
+-- Store logo variants (owner can generate and switch later).
+create table if not exists public.store_logos (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  store_id uuid not null references public.stores(id) on delete cascade,
+  business_name text not null,
+  variant_key text not null,
+  variant_name text not null,
+  logo_public_id text not null,
+  logo_url text not null,
+  is_selected boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists store_logos_owner_id_idx on public.store_logos(owner_id, created_at desc);
+create index if not exists store_logos_store_id_idx on public.store_logos(store_id, created_at desc);
+
+alter table public.store_logos enable row level security;
+
+drop policy if exists "store_logos_select_own" on public.store_logos;
+drop policy if exists "store_logos_insert_own" on public.store_logos;
+drop policy if exists "store_logos_update_own" on public.store_logos;
+drop policy if exists "store_logos_delete_own" on public.store_logos;
+
+create policy "store_logos_select_own"
+  on public.store_logos for select
+  using (auth.uid() = owner_id);
+
+create policy "store_logos_insert_own"
+  on public.store_logos for insert
+  with check (auth.uid() = owner_id);
+
+create policy "store_logos_update_own"
+  on public.store_logos for update
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+create policy "store_logos_delete_own"
+  on public.store_logos for delete
+  using (auth.uid() = owner_id);
 
 -- Products (tenant-bound by owner_id).
 create table if not exists public.products (

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logo Onboarding</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --text: #1f2937;
+            --text-secondary: #6b7280;
+            --bg: #f3f4f6;
+            --surface: #ffffff;
+            --line: #e5e7eb;
+            --accent: #111827;
+            --accent-soft: #f9fafb;
+            --ok: #065f46;
+            --ok-bg: #ecfdf5;
+            --error: #991b1b;
+            --error-bg: #fef2f2;
+            --radius: 18px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(120% 100% at 50% 0%, #eff2f7 0%, #e5e7eb 100%);
+            color: var(--text);
+            min-height: 100dvh;
+            padding: 20px 14px 32px;
+        }
+        .wrap {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+        }
+        .head {
+            padding: 20px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+        .sub {
+            margin-top: 6px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .body { padding: 18px 20px 22px; }
+        .notice {
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+        .notice.error {
+            color: var(--error);
+            background: var(--error-bg);
+            border: 1px solid rgba(185, 28, 28, 0.16);
+        }
+        .notice.ok {
+            color: var(--ok);
+            background: var(--ok-bg);
+            border: 1px solid rgba(6, 95, 70, 0.16);
+        }
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .input {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #fff;
+            font-size: 15px;
+            font-family: inherit;
+            padding: 12px 14px;
+            color: var(--text);
+            outline: none;
+            width: 100%;
+        }
+        .btn {
+            border: 1px solid transparent;
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s ease;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-dark {
+            color: #fff;
+            background: linear-gradient(135deg, #0f172a, #111827);
+        }
+        .btn-soft {
+            color: var(--text);
+            background: var(--accent-soft);
+            border-color: var(--line);
+        }
+        .muted {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 12px;
+        }
+        .card {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 10px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 260px;
+        }
+        .logo-box {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #f8fafc;
+            height: 148px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .logo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .meta-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .tag {
+            font-size: 11px;
+            color: #0f172a;
+            background: #e2e8f0;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-weight: 600;
+        }
+        .tag.selected {
+            color: #14532d;
+            background: #dcfce7;
+        }
+        .variant-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .variant-time {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        .actions {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        @media (max-width: 560px) {
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="panel">
+        <div class="head">
+            <div>
+                <h1 class="title">Brand Your Store</h1>
+                <p class="sub">Generate 3 professional logo options from your business name, pick one, and we will stamp it on your product uploads.</p>
+            </div>
+            <a href="/logout?next=/products" class="link">Log out</a>
+        </div>
+        <div class="body">
+            <% if (typeof error === 'string' && error) { %>
+            <div class="notice error"><%= error %></div>
+            <% } %>
+            <div class="notice ok" id="statusNotice">
+                Every generated logo is saved to your account. You can switch later from Studio.
+            </div>
+            <div class="input-row">
+                <input
+                    id="businessNameInput"
+                    class="input"
+                    type="text"
+                    maxlength="64"
+                    value="<%= typeof businessName === 'string' ? businessName : '' %>"
+                    placeholder="Business name"
+                >
+                <button type="button" class="btn btn-dark" id="generateBtn">Generate 3 logos</button>
+            </div>
+            <p class="muted">Tip: enter the exact business name you want on your store. Picking a logo also updates your store branding.</p>
+            <div class="grid" id="logoGrid"></div>
+            <div class="actions">
+                <a href="/" class="btn btn-soft" id="continueBtn">Continue to Studio</a>
+                <% if (typeof store !== 'undefined' && store && store.slug) { %>
+                <a href="/s/<%= encodeURIComponent(store.slug) %>" class="btn btn-soft">Open Storefront</a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var variants = <%- JSON.stringify(Array.isArray(logos) ? logos : []) %>;
+        var generateBtn = document.getElementById('generateBtn');
+        var businessNameInput = document.getElementById('businessNameInput');
+        var logoGrid = document.getElementById('logoGrid');
+        var statusNotice = document.getElementById('statusNotice');
+        var continueBtn = document.getElementById('continueBtn');
+
+        function hasSelectedLogo() {
+            return variants.some(function (item) { return !!item && !!item.isSelected; });
+        }
+
+        function updateContinueState() {
+            if (!continueBtn) return;
+            continueBtn.style.opacity = hasSelectedLogo() ? '1' : '0.75';
+        }
+
+        function formatDate(iso) {
+            if (!iso) return '';
+            try {
+                var dt = new Date(iso);
+                return dt.toLocaleString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function showStatus(message, isError) {
+            if (!statusNotice) return;
+            statusNotice.textContent = message || '';
+            statusNotice.className = 'notice ' + (isError ? 'error' : 'ok');
+        }
+
+        function escapeHtml(str) {
+            var div = document.createElement('div');
+            div.textContent = String(str || '');
+            return div.innerHTML;
+        }
+
+        function renderVariants() {
+            if (!logoGrid) return;
+            if (!variants.length) {
+                logoGrid.innerHTML = '<div class="card" style="justify-content:center;align-items:center;text-align:center;"><p class="muted" style="margin:0;">No logos yet. Generate your first 3 options.</p></div>';
+                updateContinueState();
+                return;
+            }
+
+            logoGrid.innerHTML = variants.map(function (item) {
+                var selected = !!item.isSelected;
+                var buttonLabel = selected ? 'Selected' : 'Use this logo';
+                var created = formatDate(item.createdAt);
+                return [
+                    '<div class="card">',
+                    '<div class="logo-box"><img src="' + escapeHtml(item.logoUrl || '') + '" alt="' + escapeHtml(item.variantName || 'Logo') + '"></div>',
+                    '<div class="meta-line"><span class="variant-name">' + escapeHtml(item.variantName || 'Logo') + '</span>',
+                    '<span class="tag ' + (selected ? 'selected' : '') + '">' + (selected ? 'Active' : 'Saved') + '</span></div>',
+                    '<div class="variant-time">' + escapeHtml(created) + '</div>',
+                    '<button type="button" class="btn ' + (selected ? 'btn-soft' : 'btn-dark') + '" data-logo-id="' + escapeHtml(item.id || '') + '" ' + (selected ? 'disabled' : '') + '>',
+                    buttonLabel,
+                    '</button>',
+                    '</div>'
+                ].join('');
+            }).join('');
+
+            updateContinueState();
+        }
+
+        async function chooseLogo(logoId, buttonEl) {
+            if (!logoId) return;
+            var originalText = buttonEl ? buttonEl.textContent : '';
+            if (buttonEl) {
+                buttonEl.disabled = true;
+                buttonEl.textContent = 'Applying...';
+            }
+            try {
+                var res = await fetch('/api/logo-variants/select', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ logoId: logoId })
+                });
+                var data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error((data && data.error) || 'Could not select logo');
+                }
+                variants = variants.map(function (item) {
+                    return { ...item, isSelected: item.id === logoId };
+                });
+                showStatus('Logo selected. New uploads will include this brand mark.', false);
+                renderVariants();
+            } catch (err) {
+                if (buttonEl) {
+                    buttonEl.disabled = false;
+                    buttonEl.textContent = originalText || 'Use this logo';
+                }
+                showStatus((err && err.message) || 'Could not select logo', true);
+            }
+        }
+
+        if (logoGrid) {
+            logoGrid.addEventListener('click', function (event) {
+                var button = event.target && event.target.closest('button[data-logo-id]');
+                if (!button) return;
+                chooseLogo(button.getAttribute('data-logo-id'), button);
+            });
+        }
+
+        async function generateVariants() {
+            if (!generateBtn || !businessNameInput) return;
+            var businessName = String(businessNameInput.value || '').trim();
+            if (!businessName) {
+                showStatus('Business name is required.', true);
+                businessNameInput.focus();
+                return;
+            }
+            var originalText = generateBtn.textContent;
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            showStatus('Generating logo options...', false);
+            try {
+                var res = await fetch('/api/logo-variants/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ businessName: businessName })
+                });
+                var data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error((data && data.error) || 'Logo generation failed');
+                }
+                var latest = Array.isArray(data.variants) ? data.variants : [];
+                variants = latest.concat(variants).slice(0, 36);
+                showStatus('3 new logo options generated. Pick one to activate it.', false);
+                renderVariants();
+            } catch (err) {
+                showStatus((err && err.message) || 'Logo generation failed', true);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = originalText;
+            }
+        }
+
+        if (generateBtn) {
+            generateBtn.addEventListener('click', generateVariants);
+        }
+
+        renderVariants();
+    })();
+</script>
+</body>
+</html>
