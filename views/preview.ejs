@@ -3,7 +3,7 @@
 <head>
     <meta property="og:title" content="Price: <%= item.price %>">
     <meta property="og:description" content="<%= (function(){ var s=function(v){ return (v||'').split(',')[0].trim(); }; return [item.size && ('Size: ' + s(item.size)), item.color && ('Color: ' + s(item.color)), item.qty && ('Qty: ' + s(item.qty))].filter(Boolean).join(' · ') || 'View product and chat with vendor'; })() %>">
-    <meta property="og:image" content="<%= previewImage %>">
+    <meta property="og:image" content="<%= (typeof ogPreviewImage !== 'undefined' && ogPreviewImage) ? ogPreviewImage : previewImage %>">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="1200">
     <meta property="og:type" content="website">
@@ -26,7 +26,7 @@
         <% if (item.type === 'video') { %>
             <video controls><source src="<%= rawMediaUrl %>" type="video/mp4"></video>
         <% } else { %>
-            <img src="<%= previewImage %>" alt="Product Image">
+            <img src="<%= (typeof ogPreviewImage !== 'undefined' && ogPreviewImage) ? ogPreviewImage : previewImage %>" alt="Product Image">
         <% } %>
 
         <a href="https://wa.me/2348053752505" class="btn">Chat with Vendor</a>

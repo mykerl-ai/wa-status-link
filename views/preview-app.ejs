@@ -76,12 +76,13 @@
             justify-content: center;
             flex: 1;
             min-height: clamp(540px, calc(100dvh - 210px), 760px);
-            padding: 18px 0 24px;
+            padding: 24px 0 24px;
         }
         .stage-head {
             width: 90vw;
             max-width: 90vw;
-            margin-bottom: 10px;
+            margin-top: 8px;
+            margin-bottom: 12px;
             flex-shrink: 0;
         }
         .result-label {
@@ -132,7 +133,7 @@
             .immersive-stage {
                 justify-content: flex-start;
                 min-height: 0;
-                padding-top: 8px;
+                padding-top: 14px;
             }
         }
         .stack-container {
@@ -500,7 +501,12 @@
 <body>
 
 <header class="app-header" style="justify-content:space-between;">
-    <h1 class="app-title"><%= (typeof store !== 'undefined' && store && store.name) ? store.name : 'Products' %></h1>
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <% if (typeof store !== 'undefined' && store && store.logoUrl) { %>
+        <img src="<%= store.logoUrl %>" alt="Store logo" style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(53,38,78,0.12);background:#fff;object-fit:contain;padding:3px;flex-shrink:0;">
+        <% } %>
+        <h1 class="app-title"><%= (typeof store !== 'undefined' && store && store.name) ? store.name : 'Products' %></h1>
+    </div>
     <% if (typeof user !== 'undefined' && user) { %>
     <a href="/logout?next=<%= encodeURIComponent(canonicalLink) %>" style="font-size:13px;font-weight:500;color:var(--text-secondary);text-decoration:none;">Log out</a>
     <% } else { %>
@@ -552,7 +558,7 @@
                     </div>
                     <div class="card-bottom-meta">
                         <div class="card-price-inline"><%= item.price %></div>
-                        <div class="card-name-inline"><%= (function(){ var s=function(v){ return (v||'').split(',')[0].trim(); }; return [item.size && ('Size: ' + s(item.size)), item.color && ('Color: ' + s(item.color)), item.qty && ('Qty: ' + s(item.qty))].filter(Boolean).join(' · ') || '—'; })() %></div>
+                        <div class="card-name-inline"><%= (function(){ var s=function(v){ return (v||'').split(',')[0].trim(); }; return [item.categoryName, item.size && ('Size: ' + s(item.size)), item.color && ('Color: ' + s(item.color)), item.qty && ('Qty: ' + s(item.qty))].filter(Boolean).join(' · ') || '—'; })() %></div>
                     </div>
                 </div>
                 <div class="stack-overlay">

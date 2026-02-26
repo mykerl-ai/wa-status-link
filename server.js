@@ -1552,6 +1552,10 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
         const scopedProductService = requestSupabase && !supabaseServiceKey
             ? new ProductService(requestSupabase)
             : productService;
+        const scopedCategoryService = requestSupabase && !supabaseServiceKey
+            ? new CategoryService(requestSupabase)
+            : categoryService;
+        let categoryName = '';
         let ownerStore = null;
 
         try {
@@ -1569,6 +1573,14 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
                 success: false,
                 error: 'Set up your brand logo first. Open Logo onboarding and select a logo before uploading.'
             });
+        }
+        if (categoryId && scopedCategoryService && req.user?.id) {
+            try {
+                const cats = await scopedCategoryService.list(req.user.id);
+                categoryName = (cats.find((c) => c.id === categoryId)?.name || '').trim();
+            } catch (categoryErr) {
+                console.error('Category name lookup failed during upload:', categoryErr.message);
+            }
         }
 
         for (let i = 0; i < req.files.length; i++) {
@@ -1617,7 +1629,12 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
                 previewUrl,
                 mediaType,
                 badgeLabel,
-                storeSlug: ownerStore?.slug || ''
+                storeSlug: ownerStore?.slug || '',
+                categoryId: categoryId || '',
+                categoryName: categoryName || '',
+                size,
+                color,
+                qty
             });
 
             // Save product to Supabase (skipped if SUPABASE_ANON_KEY / SUPABASE_SERVICE_KEY not set)
@@ -1821,8 +1838,18 @@ app.get('/p/:publicId', async (req, res) => {
         });
 
     const rawMediaUrl = cloudinary.url(publicId, { resource_type: mediaType });
-    const item = { price, isSoldOut: statusItem.isSoldOut, type: mediaType, badgeLabel, size: '', color: '', qty: '' };
+    const item = {
+        price,
+        isSoldOut: statusItem.isSoldOut,
+        type: mediaType,
+        badgeLabel,
+        size: '',
+        color: '',
+        qty: '',
+        categoryName: ''
+    };
     let productOwnerId = null;
+    let productCategoryId = null;
     let ownerStore = null;
     if (productService) {
         try {
@@ -1832,6 +1859,7 @@ app.get('/p/:publicId', async (req, res) => {
                 item.color = product.color || '';
                 item.qty = product.qty || '';
                 productOwnerId = product.ownerId || null;
+                productCategoryId = product.categoryId || null;
             }
         } catch (e) {
             // keep defaults
@@ -1845,8 +1873,30 @@ app.get('/p/:publicId', async (req, res) => {
             console.error('Store lookup failed for preview:', e.message);
         }
     }
+    if (productCategoryId && supabase) {
+        try {
+            const requestSupabase = getRequestSupabase(req) || supabase;
+            const { data: categoryRow, error: categoryErr } = await requestSupabase
+                .from('categories')
+                .select('name')
+                .eq('id', productCategoryId)
+                .maybeSingle();
+            if (!categoryErr && categoryRow?.name) {
+                item.categoryName = String(categoryRow.name || '').trim();
+            }
+        } catch (categoryLookupErr) {
+            console.error('Category lookup failed for preview:', categoryLookupErr.message);
+        }
+    }
 
     const fallbackStoreSlug = sanitizeStoreSlug(req.query.store || req.cookies[STORE_COOKIE] || '');
+    if (!ownerStore && fallbackStoreSlug) {
+        try {
+            ownerStore = await findStoreBySlug(fallbackStoreSlug);
+        } catch (e) {
+            console.error('Fallback store lookup failed for preview:', e.message);
+        }
+    }
     const activeStoreSlug = ownerStore?.slug || fallbackStoreSlug || '';
     const host = req.get('host');
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -1865,6 +1915,14 @@ app.get('/p/:publicId', async (req, res) => {
 
     const payload = {
         previewImage: previewUrl,
+        ogPreviewImage: mediaType === 'video'
+            ? buildVideoOgPreviewUrl(cloudinary, publicId, { logoPublicId: ownerStore?.logoPublicId || '' })
+            : buildImagePreviewUrl(cloudinary, {
+                publicId,
+                bgColor: bg,
+                ogSquare: true,
+                logoPublicId: ownerStore?.logoPublicId || ''
+            }),
         item,
         rawMediaUrl,
         publicId,
@@ -1888,13 +1946,36 @@ app.get('/p/:publicId', async (req, res) => {
 });
 
 // 8. CART PAGE
-app.get('/cart', (req, res) => {
+app.get('/cart', async (req, res) => {
+    let store = null;
+    let storePath = null;
+    let storeLink = null;
+    if (supabase) {
+        try {
+            const requestSupabase = getRequestSupabase(req) || supabase;
+            const { store: resolvedStore, requestedToken } = await resolveStoreContext(req, {
+                allowOwnerFallback: true,
+                supabaseClient: requestSupabase
+            });
+            store = resolvedStore;
+            if (store?.slug) setStoreCookie(res, store.slug);
+            else if (requestedToken) clearStoreCookie(res);
+            storePath = store?.slug ? storePathFromSlug(store.slug) : null;
+            storeLink = storePath ? absoluteUrlFromPath(req, storePath) : null;
+        } catch (e) {
+            console.error('Cart store resolve error:', e.message);
+        }
+    }
+
     res.render('cart', {
         paystackPublicKey: paystackPublic,
         user: req.user,
         role: req.role,
         canCreateStore: req.role !== 'owner',
-        createStoreHref: getCreateStoreHref(req)
+        createStoreHref: getCreateStoreHref(req),
+        store,
+        storePath,
+        storeLink
     });
 });
 

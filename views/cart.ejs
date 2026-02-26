@@ -74,7 +74,12 @@
 <body>
 
 <header class="app-header" style="justify-content:space-between;">
-    <h1 class="app-title">Cart</h1>
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <% if (typeof store !== 'undefined' && store && store.logoUrl) { %>
+        <img src="<%= store.logoUrl %>" alt="Store logo" style="width:30px;height:30px;border-radius:9px;border:1px solid rgba(60,60,67,0.16);background:#fff;object-fit:contain;padding:3px;flex-shrink:0;">
+        <% } %>
+        <h1 class="app-title"><%= (typeof store !== 'undefined' && store && store.name) ? (store.name + ' Cart') : 'Cart' %></h1>
+    </div>
     <% if (typeof user !== 'undefined' && user) { %>
     <a href="/logout?next=/cart" style="font-size:14px;font-weight:500;color:var(--text-secondary);text-decoration:none;">Log out</a>
     <% } else { %>

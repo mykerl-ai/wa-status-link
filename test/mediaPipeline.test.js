@@ -34,9 +34,11 @@ test('buildImageTransformations stays non-destructive and includes optional over
 
     assert.equal(transformations[0].effect, 'background_removal');
     assert.equal(transformations[1].effect, 'improve');
-    assert.ok(transformations.some((step) => step.overlay && step.overlay.public_id === 'store-logos/demo-owner/logo-001'));
-    assert.ok(transformations.some((step) => step.opacity === 88));
-    assert.ok(transformations.some((step) => step.gravity === 'south_east'));
+    assert.ok(transformations.some((step) => step.overlay === 'store-logos:demo-owner:logo-001'));
+    assert.ok(transformations.some((step) => step.opacity === 90));
+    assert.ok(transformations.some((step) => step.width === 64));
+    assert.ok(transformations.some((step) => step.flags === 'layer_apply' && step.gravity === 'north_east'));
+    assert.ok(transformations.some((step) => step.flags === 'layer_apply' && step.x === 10 && step.y === 8));
     assert.equal(transformations.some((step) => step.crop === 'limit'), false);
     assert.equal(transformations.some((step) => step.effect === 'trim:12'), false);
 });
@@ -83,6 +85,20 @@ test('buildVideoOgPreviewUrl uses jpg fallback options', () => {
     assert.equal(payload.options.transformation[0].start_offset, '1');
 });
 
+test('buildVideoOgPreviewUrl can add logo overlay for bot previews', () => {
+    const cloudinary = mockCloudinary();
+    const raw = buildVideoOgPreviewUrl(cloudinary, 'vid_3', {
+        logoPublicId: 'store-logos/demo-owner/logo-a'
+    });
+    const payload = JSON.parse(raw);
+    const steps = payload.options.transformation;
+
+    assert.equal(steps[0].width, 1200);
+    assert.equal(steps[1].overlay, 'store-logos:demo-owner:logo-a');
+    assert.equal(steps[3].flags, 'layer_apply');
+    assert.equal(steps[3].gravity, 'north_west');
+});
+
 test('buildImagePreviewUrl applies delivery-only limit framing and quality', () => {
     const cloudinary = mockCloudinary();
     const raw = buildImagePreviewUrl(cloudinary, {
@@ -105,4 +121,23 @@ test('buildImagePreviewUrl applies delivery-only limit framing and quality', () 
         fetch_format: 'auto',
         dpr: 'auto'
     });
+});
+
+test('buildImagePreviewUrl can output square og preview with logo overlay', () => {
+    const cloudinary = mockCloudinary();
+    const raw = buildImagePreviewUrl(cloudinary, {
+        publicId: 'img_2',
+        bgColor: 'white',
+        ogSquare: true,
+        logoPublicId: 'store-logos/demo-owner/logo-b'
+    });
+    const payload = JSON.parse(raw);
+    const steps = payload.options.transformation;
+
+    assert.equal(steps[0].width, 1200);
+    assert.equal(steps[0].height, 1200);
+    assert.equal(steps[0].crop, 'fill');
+    assert.equal(steps[1].overlay, 'store-logos:demo-owner:logo-b');
+    assert.equal(steps[3].flags, 'layer_apply');
+    assert.equal(steps[steps.length - 1].quality, 'auto:best');
 });

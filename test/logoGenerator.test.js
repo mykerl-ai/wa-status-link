@@ -27,4 +27,6 @@ test('buildLogoVariants returns three escaped variants', () => {
     assert.equal(variants.every((v) => typeof v.svg === 'string' && v.svg.startsWith('<svg')), true);
     assert.equal(variants.every((v) => v.businessName === 'Rhee <Store>'), true);
     assert.equal(variants.every((v) => !v.svg.includes('<Store>')), true);
+    assert.equal(variants.every((v) => !v.svg.includes('OFFICIAL STORE')), true);
+    assert.equal(variants.every((v) => v.svg.includes('RHEE') === false), true);
 });

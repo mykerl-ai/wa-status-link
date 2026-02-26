@@ -283,7 +283,12 @@
 <body>
 
 <header class="app-header">
-    <h1 class="app-title"><%= (typeof store !== 'undefined' && store && store.name) ? store.name : 'Products - Simple' %></h1>
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <% if (typeof store !== 'undefined' && store && store.logoUrl) { %>
+        <img src="<%= store.logoUrl %>" alt="Store logo" style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(53,38,78,0.12);background:#fff;object-fit:contain;padding:3px;flex-shrink:0;">
+        <% } %>
+        <h1 class="app-title"><%= (typeof store !== 'undefined' && store && store.name) ? store.name : 'Products - Simple' %></h1>
+    </div>
     <div style="display:flex;align-items:center;gap:12px;">
         <% if (typeof canCreateStore !== 'undefined' && canCreateStore) { %>
         <a href="<%= typeof createStoreHref === 'string' && createStoreHref ? createStoreHref : '/signup?next=%2Fcreate-store' %>" class="view-switch">Create store</a>

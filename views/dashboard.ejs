@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f5f5f7">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>Studio</title>
+    <title><%= (typeof store !== 'undefined' && store && store.name) ? store.name : 'Studio' %></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -638,7 +638,12 @@
             border-radius: 24px;
             background: linear-gradient(180deg, rgba(28,20,44,0) 56%, rgba(28,20,44,0.09) 100%);
         }
-        .stack-header { pointer-events: none; transform: translateY(0); padding-left: 2px; margin-bottom: 8px; }
+        .stack-header {
+            pointer-events: none;
+            transform: translateY(0);
+            padding: 14px 0 0 2px;
+            margin-bottom: 8px;
+        }
         .stack-footer { pointer-events: auto; transform: translateY(calc(100% + 12px)); }
         .card-details { margin-top: 0; padding: 0 2px; pointer-events: none; }
         .card-title { font-size: 40px; line-height: 1; font-weight: 700; color: var(--text); letter-spacing: -0.03em; }
@@ -725,7 +730,12 @@
 <body>
 
 <header class="app-header" style="justify-content:space-between;">
-    <h1 class="app-title">Studio</h1>
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <% if (typeof store !== 'undefined' && store && store.logoUrl) { %>
+        <img src="<%= store.logoUrl %>" alt="Store logo" style="width:30px;height:30px;border-radius:9px;border:1px solid rgba(53,38,78,0.14);background:#fff;object-fit:contain;padding:3px;flex-shrink:0;">
+        <% } %>
+        <h1 class="app-title"><%= (typeof store !== 'undefined' && store && store.name) ? store.name : 'Studio' %></h1>
+    </div>
     <div style="display:flex;align-items:center;gap:12px;">
         <% if (typeof storePath !== 'undefined' && storePath) { %>
         <a href="<%= storePath %>" style="font-size:13px;font-weight:500;color:var(--tint);text-decoration:none;">Storefront</a>
@@ -1870,11 +1880,23 @@
         Array.from(e.target.querySelectorAll('input[name="prices"]')).forEach(function(inputEl) {
             inputEl.value = normalizePriceText(inputEl.value);
         });
+        const categorySelectEl = document.getElementById('categorySelect');
+        const selectedCategoryOption = categorySelectEl
+            && categorySelectEl.options
+            && categorySelectEl.options.length
+            ? categorySelectEl.options[categorySelectEl.selectedIndex]
+            : null;
+        const batchCategoryName = selectedCategoryOption && selectedCategoryOption.value
+            ? String(selectedCategoryOption.textContent || '').trim()
+            : '';
+        const batchSize = (document.getElementById('productSize') && document.getElementById('productSize').value || '').trim();
+        const batchColor = (document.getElementById('productColor') && document.getElementById('productColor').value || '').trim();
+        const batchQty = (document.getElementById('productQty') && document.getElementById('productQty').value || '').trim();
         const formData = new FormData(e.target);
         formData.append('removeBg', document.getElementById('removeBgToggle').checked);
-        formData.append('size', (document.getElementById('productSize') && document.getElementById('productSize').value) || '');
-        formData.append('color', (document.getElementById('productColor') && document.getElementById('productColor').value) || '');
-        formData.append('qty', (document.getElementById('productQty') && document.getElementById('productQty').value) || '');
+        formData.append('size', batchSize);
+        formData.append('color', batchColor);
+        formData.append('qty', batchQty);
 
         try {
             const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
@@ -1887,7 +1909,11 @@
                 if (!item) return item;
                 return {
                     ...item,
-                    price: normalizePriceText(item.price || '')
+                    price: normalizePriceText(item.price || ''),
+                    categoryName: (item.categoryName || batchCategoryName || '').trim(),
+                    size: (item.size || batchSize || '').trim(),
+                    color: (item.color || batchColor || '').trim(),
+                    qty: (item.qty || batchQty || '').trim()
                 };
             });
             currentIndex = 0;
@@ -1970,6 +1996,13 @@
             if (i === 2) backCards.third = card;
             const safeBadge = escapeHtml(item.badgeLabel || '');
             const safePrice = escapeHtml(normalizePriceText(item.price || ''));
+            const parts = [];
+            const s = (v) => (v || '').split(',')[0].trim();
+            if (item.categoryName) parts.push(escapeHtml(item.categoryName));
+            if (item.size) parts.push('Size: ' + escapeHtml(s(item.size)));
+            if (item.color) parts.push('Color: ' + escapeHtml(s(item.color)));
+            if (item.qty) parts.push('Qty: ' + escapeHtml(s(item.qty)));
+            const metaLine = parts.length ? parts.join(' | ') : 'Product';
             card.innerHTML = `
                 <div class="card-image-fill">
                     <img class="card-image-bg" src="${escapeHtml(item.previewUrl)}" alt="" aria-hidden="true">
@@ -1983,7 +2016,7 @@
                 </div>
                 <div class="card-bottom-meta">
                     <div class="card-price-inline">${safePrice}</div>
-                    <div class="card-name-inline">Product</div>
+                    <div class="card-name-inline">${metaLine}</div>
                 </div>
             `;
             if (isFront) initSwipe(card);
@@ -2224,5 +2257,3 @@
 </script>
 </body>
 </html>
-
-
