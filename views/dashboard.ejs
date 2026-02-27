@@ -2152,18 +2152,109 @@
         return payload;
     }
 
+    function isVideoUploadFile(file) {
+        const mime = String(file && file.type || '').toLowerCase();
+        const name = String(file && file.name || '').toLowerCase();
+        if (mime.startsWith('video/')) return true;
+        return /\.(mp4|mov|m4v|avi|mkv|webm|3gp|3g2)$/i.test(name);
+    }
+
+    function isImageUploadFile(file) {
+        if (!file) return false;
+        if (isVideoUploadFile(file)) return false;
+        const mime = String(file.type || '').toLowerCase();
+        const name = String(file.name || '').toLowerCase();
+        if (mime.startsWith('image/')) return true;
+        return /\.(jpe?g|png|webp|heic|heif|gif|bmp|avif)$/i.test(name);
+    }
+
+    function loadImageFromFile(file) {
+        return new Promise(function(resolve, reject) {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = function() {
+                try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
+                resolve(img);
+            };
+            img.onerror = function() {
+                try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
+                reject(new Error('Could not decode image'));
+            };
+            img.src = url;
+        });
+    }
+
+    function toJpegFileName(name) {
+        const base = String(name || 'upload')
+            .replace(/[\\/:*?"<>|]+/g, '_')
+            .replace(/\.[^/.]+$/, '');
+        return (base || 'upload') + '.jpg';
+    }
+
+    async function convertImageFileToJpeg(file) {
+        const img = await loadImageFromFile(file);
+        const maxDim = 2400;
+        const width = Number(img.naturalWidth || img.width || 0);
+        const height = Number(img.naturalHeight || img.height || 0);
+        if (!width || !height) throw new Error('Invalid image size');
+
+        const scale = Math.min(1, maxDim / Math.max(width, height));
+        const outW = Math.max(1, Math.round(width * scale));
+        const outH = Math.max(1, Math.round(height * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = outW;
+        canvas.height = outH;
+        const ctx = canvas.getContext('2d', { alpha: false });
+        if (!ctx) throw new Error('Canvas unavailable');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, outW, outH);
+        ctx.drawImage(img, 0, 0, outW, outH);
+
+        const blob = await new Promise(function(resolve, reject) {
+            canvas.toBlob(function(result) {
+                if (!result) return reject(new Error('JPEG conversion failed'));
+                resolve(result);
+            }, 'image/jpeg', 0.88);
+        });
+        return new File([blob], toJpegFileName(file.name), {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+        });
+    }
+
+    async function prepareUploadFile(file) {
+        if (!isImageUploadFile(file)) return file;
+        try {
+            return await convertImageFileToJpeg(file);
+        } catch (err) {
+            console.warn('Image conversion fallback:', err && err.message ? err.message : err);
+            return file;
+        }
+    }
+
     async function postUploadFormData(formData) {
         try {
+            console.log('[debug][upload] sending via fetch', {
+                hasFormData: !!formData,
+                fieldCount: formData && typeof formData.forEach === 'function' ? (() => {
+                    let n = 0;
+                    formData.forEach(() => { n += 1; });
+                    return n;
+                })() : -1
+            });
             const res = await fetch('/upload-bulk', {
                 method: 'POST',
                 body: formData,
                 credentials: 'same-origin'
             });
+            console.log('[debug][upload] fetch response', { status: res.status, ok: res.ok });
             const text = await res.text();
             let data = null;
             try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
             return { ok: res.ok, status: res.status, data, rawText: text };
         } catch (fetchErr) {
+            console.warn('[debug][upload] fetch failed, trying XHR fallback', fetchErr && fetchErr.message ? fetchErr.message : fetchErr);
             // Safari occasionally throws "Load failed" on fetch+multipart.
             // Retry via XHR for better WebKit compatibility.
             return new Promise(function(resolve, reject) {
@@ -2172,6 +2263,7 @@
                     xhr.open('POST', '/upload-bulk', true);
                     xhr.withCredentials = true;
                     xhr.onload = function() {
+                        console.log('[debug][upload] XHR response', { status: xhr.status, ok: xhr.status >= 200 && xhr.status < 300 });
                         const text = xhr.responseText || '';
                         let data = null;
                         try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
@@ -2183,10 +2275,12 @@
                         });
                     };
                     xhr.onerror = function() {
+                        console.error('[debug][upload] XHR network error');
                         reject(new Error('Upload request failed (network).'));
                     };
                     xhr.send(formData);
                 } catch (xhrErr) {
+                    console.error('[debug][upload] XHR setup error', xhrErr && xhrErr.message ? xhrErr.message : xhrErr);
                     reject(fetchErr || xhrErr);
                 }
             });
@@ -2205,10 +2299,15 @@
         let productPayload = [];
         try {
             productPayload = collectDraftProductsOrThrow();
+            console.log('[debug][upload] draft payload built', {
+                products: productPayload.length,
+                totalFiles: productPayload.reduce(function(sum, p) { return sum + (Number(p.fileCount) || 0); }, 0)
+            });
         } catch (validationErr) {
             loader.style.display = 'none';
             btn.disabled = false;
             btn.innerHTML = originalBtnHtml;
+            console.warn('[debug][upload] validation error', validationErr && validationErr.message ? validationErr.message : validationErr);
             alert(validationErr.message || 'Check product inputs and try again.');
             return;
         }
@@ -2218,25 +2317,47 @@
         formData.append('badgeLabel', document.getElementById('badgeLabel').value || '');
         formData.append('removeBg', document.getElementById('removeBgToggle').checked);
         formData.append('productsPayload', JSON.stringify(productPayload));
-        productDrafts.forEach(function(draft) {
+        loader.textContent = 'Preparing images...';
+        for (let i = 0; i < productDrafts.length; i++) {
+            const draft = productDrafts[i];
             const files = Array.isArray(draft.files) ? draft.files : [];
-            files.forEach(function(file) {
-                const fileName = (file && file.name) ? file.name : ('upload-' + Date.now());
-                formData.append('files', file, fileName);
-            });
-        });
+            console.log('[debug][upload] preparing product media', { productIndex: i, files: files.length });
+            for (let j = 0; j < files.length; j++) {
+                const original = files[j];
+                console.log('[debug][upload] preparing file', {
+                    productIndex: i,
+                    fileIndex: j,
+                    name: original && original.name,
+                    type: original && original.type,
+                    size: original && original.size
+                });
+                const prepared = await prepareUploadFile(original);
+                const fileName = (prepared && prepared.name) ? prepared.name : ('upload-' + Date.now());
+                formData.append('files', prepared, fileName);
+            }
+        }
+        loader.textContent = 'Processing...';
 
         try {
             const uploadResult = await postUploadFormData(formData);
             const data = uploadResult.data || null;
+            console.log('[debug][upload] upload result', {
+                status: uploadResult.status,
+                ok: uploadResult.ok,
+                hasData: !!data,
+                success: !!(data && data.success),
+                rawTextPreview: uploadResult.rawText ? String(uploadResult.rawText).slice(0, 220) : ''
+            });
             if (!uploadResult.ok || !data || !data.success) {
                 if (uploadResult.status === 401 || uploadResult.status === 403) {
+                    console.warn('[debug][upload] unauthorized; redirecting to login');
                     window.location.href = '/login?next=' + encodeURIComponent('/');
                     return;
                 }
                 const msg = (data && data.error)
                     || (uploadResult.rawText && uploadResult.rawText.slice(0, 120))
                     || 'Upload failed';
+                console.error('[debug][upload] upload failed', msg);
                 throw new Error(msg);
             }
 
@@ -2251,6 +2372,7 @@
                     qty: (item.qty || '').trim()
                 };
             });
+            console.log('[debug][upload] queue hydrated', { items: uploadQueue.length });
             currentIndex = 0;
             document.querySelector('body > main').style.display = 'none';
             document.getElementById('resultArea').style.display = 'flex';
@@ -2268,9 +2390,11 @@
             productDrafts = [makeProductDraft()];
             renderProductDraftList();
         } catch (err) {
+            console.error('[debug][upload] submit exception', err && err.message ? err.message : err);
             alert((err && err.message) || 'Upload failed');
         } finally {
             loader.style.display = 'none';
+            loader.textContent = 'Processing...';
             btn.disabled = false;
             btn.innerHTML = originalBtnHtml;
         }

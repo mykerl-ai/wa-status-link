@@ -2,6 +2,7 @@ const express = require('express');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const http = require('http');
@@ -28,7 +29,8 @@ const upload = multer({
     dest: 'uploads/',
     limits: {
         files: 80,
-        fieldSize: 5 * 1024 * 1024
+        fieldSize: 5 * 1024 * 1024,
+        fileSize: 350 * 1024 * 1024
     }
 });
 dotenv.config();
@@ -119,6 +121,7 @@ const PINNED_THROWBACK_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const STORE_SELECT_COLUMNS = 'id, owner_id, slug, name, logo_public_id, logo_url';
 const STORE_SELECT_COLUMNS_LEGACY = 'id, owner_id, slug, name';
 const OWNER_LOGOS_FETCH_LIMIT = 36;
+const LARGE_VIDEO_UPLOAD_THRESHOLD_BYTES = 40 * 1024 * 1024;
 let naijaAudioCache = {
     key: '',
     expiresAt: 0,
@@ -1077,6 +1080,52 @@ function normalizeSingleField(val) {
     return String(one).trim();
 }
 
+function bytesToLabel(bytes) {
+    const n = Number(bytes) || 0;
+    if (n <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let value = n;
+    let idx = 0;
+    while (value >= 1024 && idx < units.length - 1) {
+        value /= 1024;
+        idx += 1;
+    }
+    const fixed = value >= 100 || idx === 0 ? 0 : 1;
+    return `${value.toFixed(fixed)} ${units[idx]}`;
+}
+
+function looksLikeHeicImage(file) {
+    const mime = String(file?.mimetype || '').toLowerCase();
+    const name = String(file?.originalname || '').toLowerCase();
+    return mime.includes('heic') || mime.includes('heif') || name.endsWith('.heic') || name.endsWith('.heif');
+}
+
+async function uploadMediaToCloudinary(file, uploadOptions) {
+    const mediaType = uploadOptions?.resource_type === 'video' ? 'video' : 'image';
+    const isLargeVideo = mediaType === 'video' && Number(file?.size || 0) >= LARGE_VIDEO_UPLOAD_THRESHOLD_BYTES;
+    if (isLargeVideo) {
+        return cloudinary.uploader.upload_large(file.path, {
+            ...uploadOptions,
+            resource_type: 'video',
+            chunk_size: 6 * 1024 * 1024
+        });
+    }
+    return cloudinary.uploader.upload(file.path, uploadOptions);
+}
+
+function cleanupTempFiles(files) {
+    const list = Array.isArray(files) ? files : [];
+    list.forEach((file) => {
+        const filePath = file?.path;
+        if (!filePath) return;
+        try {
+            fs.unlinkSync(filePath);
+        } catch {
+            // ignore cleanup errors
+        }
+    });
+}
+
 // 3. HEALTH CHECK
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
@@ -1541,7 +1590,14 @@ app.get('/', requireOwner, async (req, res) => {
 app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, res) => {
     try {
         const files = Array.isArray(req.files) ? req.files : [];
+        console.log('[debug][upload-bulk] request start', {
+            ownerId: req.user?.id || null,
+            files: files.length,
+            userAgent: req.get('user-agent') || '',
+            contentType: req.get('content-type') || ''
+        });
         if (!files.length) {
+            console.warn('[debug][upload-bulk] rejected: no files');
             return res.status(400).json({ success: false, error: 'Select at least one image or video.' });
         }
 
@@ -1564,9 +1620,11 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, re
             try {
                 parsed = JSON.parse(rawProductsPayload);
             } catch (parseErr) {
+                console.warn('[debug][upload-bulk] invalid productsPayload JSON');
                 return res.status(400).json({ success: false, error: 'Invalid products payload.' });
             }
             if (!Array.isArray(parsed) || !parsed.length) {
+                console.warn('[debug][upload-bulk] invalid productsPayload: empty/non-array');
                 return res.status(400).json({ success: false, error: 'No products were provided.' });
             }
 
@@ -1585,6 +1643,7 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, re
                 .filter((spec) => spec.fileCount > 0);
 
             if (!productSpecs.length) {
+                console.warn('[debug][upload-bulk] invalid productsPayload: no specs with files');
                 return res.status(400).json({ success: false, error: 'Each product must include at least one media file.' });
             }
         } else {
@@ -1600,7 +1659,13 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, re
         }
 
         const expectedFiles = productSpecs.reduce((sum, spec) => sum + (spec.fileCount || 0), 0);
+        console.log('[debug][upload-bulk] payload parsed', {
+            products: productSpecs.length,
+            expectedFiles,
+            actualFiles: files.length
+        });
         if (expectedFiles !== files.length) {
+            console.warn('[debug][upload-bulk] rejected: file count mismatch', { expectedFiles, actualFiles: files.length });
             return res.status(400).json({
                 success: false,
                 error: 'Uploaded files do not match products. Please reselect files and try again.'
@@ -1632,6 +1697,7 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, re
         }
 
         if (!ownerStore?.logoPublicId) {
+            console.warn('[debug][upload-bulk] rejected: owner has no logo selected');
             return res.status(400).json({
                 success: false,
                 error: 'Set up your brand logo first. Open Logo onboarding and select a logo before uploading.'
@@ -1645,6 +1711,7 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, re
                 categoryNameById = Object.fromEntries((cats || []).map((cat) => [cat.id, cat.name]));
                 const invalidCategoryId = requestedCategoryIds.find((id) => !categoryNameById[id]);
                 if (invalidCategoryId) {
+                    console.warn('[debug][upload-bulk] rejected: invalid category id', invalidCategoryId);
                     return res.status(400).json({ success: false, error: 'One or more products use an invalid category.' });
                 }
             } catch (categoryErr) {
@@ -1658,11 +1725,25 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, re
             const productFiles = files.slice(fileCursor, fileCursor + spec.fileCount);
             fileCursor += spec.fileCount;
             if (!productFiles.length) continue;
+            console.log('[debug][upload-bulk] product processing', {
+                productIndex,
+                files: productFiles.length,
+                categoryId: spec.categoryId || '',
+                price: spec.price
+            });
 
             const mediaAssets = [];
             for (let fileIndex = 0; fileIndex < productFiles.length; fileIndex++) {
                 const file = productFiles[fileIndex];
                 const mediaType = (file.mimetype || '').startsWith('video/') ? 'video' : 'image';
+                console.log('[debug][upload-bulk] file processing', {
+                    productIndex,
+                    fileIndex,
+                    originalname: file.originalname,
+                    mimetype: file.mimetype,
+                    size: file.size,
+                    mediaType
+                });
                 const uploadOptions = { resource_type: mediaType };
                 if (mediaType === 'image') {
                     uploadOptions.transformation = buildImageTransformations({
@@ -1673,7 +1754,34 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, re
                     });
                 }
 
-                const uploadResult = await cloudinary.uploader.upload(file.path, uploadOptions);
+                let uploadResult = null;
+                try {
+                    uploadResult = await uploadMediaToCloudinary(file, uploadOptions);
+                    console.log('[debug][upload-bulk] cloudinary upload ok', {
+                        productIndex,
+                        fileIndex,
+                        publicId: uploadResult.public_id,
+                        resourceType: uploadResult.resource_type
+                    });
+                } catch (uploadErr) {
+                    const fileLabel = file?.originalname ? `"${file.originalname}"` : 'this file';
+                    const fileSize = bytesToLabel(file?.size || 0);
+                    console.error('[debug][upload-bulk] cloudinary upload failed', {
+                        productIndex,
+                        fileIndex,
+                        fileLabel,
+                        mime: file?.mimetype,
+                        size: file?.size,
+                        message: uploadErr?.message || String(uploadErr)
+                    });
+                    if (looksLikeHeicImage(file)) {
+                        throw new Error(`Upload failed for ${fileLabel}. HEIC/HEIF from iPhone may be unsupported on this account. In iPhone Camera settings, set Format to "Most Compatible" (JPG/H.264) and try again.`);
+                    }
+                    if (String(file?.mimetype || '').toLowerCase().startsWith('video/')) {
+                        throw new Error(`Upload failed for ${fileLabel} (${fileSize}). If this iPhone video is large, trim it and try again.`);
+                    }
+                    throw new Error(`Upload failed for ${fileLabel} (${fileSize}). ${uploadErr.message || 'Unknown upload error.'}`);
+                }
                 const previewUrl = mediaType === 'video'
                     ? buildVideoAnimatedPreviewUrl(cloudinary, uploadResult.public_id)
                     : buildImagePreviewUrl(cloudinary, {
@@ -1741,6 +1849,11 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, re
                         categoryId: spec.categoryId || null,
                         mediaItems: mediaAssets
                     });
+                    console.log('[debug][upload-bulk] product saved', {
+                        productIndex,
+                        primaryPublicId: primary.publicId,
+                        mediaCount: mediaAssets.length
+                    });
                 } catch (dbErr) {
                     console.error('Product save error:', dbErr.message, dbErr.code || '', dbErr.details || '');
                     if (!res.locals.dbError) res.locals.dbError = dbErr.message;
@@ -1750,9 +1863,15 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, re
         }
 
         if (!results.length) {
+            console.warn('[debug][upload-bulk] rejected: no results produced');
             return res.status(400).json({ success: false, error: 'No products were uploaded. Check your media files and try again.' });
         }
 
+        console.log('[debug][upload-bulk] success', {
+            items: results.length,
+            dbSaved: !!scopedProductService && !res.locals.dbError,
+            dbError: res.locals.dbError || null
+        });
         res.json({
             success: true,
             items: results,
@@ -1762,6 +1881,8 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, re
     } catch (err) {
         console.error('Cloudinary Error:', err);
         res.status(500).json({ success: false, error: err.message });
+    } finally {
+        cleanupTempFiles(req.files);
     }
 });
 
@@ -2173,6 +2294,39 @@ app.get('/api/payment/verify', async (req, res) => {
         console.error('Verify error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
+});
+
+app.use((err, req, res, next) => {
+    if (!(err instanceof multer.MulterError)) return next(err);
+    console.error('[debug][multer] upload middleware error', {
+        code: err.code,
+        message: err.message,
+        path: req.path
+    });
+    let message = err.message || 'Upload failed';
+    if (err.code === 'LIMIT_FILE_SIZE') {
+        message = 'One file is too large. Keep each file under 350 MB and try again.';
+    } else if (err.code === 'LIMIT_FILE_COUNT') {
+        message = 'Too many files in one upload.';
+    } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        message = 'Unexpected upload field. Please reselect files and try again.';
+    }
+
+    const expectsJson = req.path === '/upload-bulk' || req.path.startsWith('/api/');
+    if (expectsJson) {
+        return res.status(400).json({ success: false, error: message });
+    }
+    return res.status(400).send(message);
+});
+
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    if (res.headersSent) return next(err);
+    const expectsJson = req.path.startsWith('/api/') || req.path === '/upload-bulk';
+    if (expectsJson) {
+        return res.status(500).json({ success: false, error: 'Unexpected server error' });
+    }
+    return res.status(500).send('Unexpected server error');
 });
 
 const PORT = process.env.PORT || 3000;
