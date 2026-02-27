@@ -587,7 +587,7 @@
                     </div>
                     <div class="card-bottom-meta">
                         <div class="card-price-inline"><%= item.price %></div>
-                        <div class="card-name-inline"><%= (function(){ var s=function(v){ return (v||'').split(',')[0].trim(); }; return [item.categoryName, item.size && ('Size: ' + s(item.size)), item.color && ('Color: ' + s(item.color)), item.qty && ('Qty: ' + s(item.qty))].filter(Boolean).join(' · ') || '—'; })() %></div>
+                        <div class="card-name-inline"><%= (function(){ var s=function(v){ return (v||'').split(',')[0].trim(); }; return [item.categoryName, item.mediaCount > 1 && (item.mediaCount + ' media'), item.size && ('Size: ' + s(item.size)), item.color && ('Color: ' + s(item.color)), item.qty && ('Qty: ' + s(item.qty))].filter(Boolean).join(' · ') || '—'; })() %></div>
                     </div>
                 </div>
                 <div class="stack-overlay">

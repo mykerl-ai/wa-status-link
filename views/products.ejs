@@ -629,6 +629,7 @@
             const parts = [];
             const s = (v) => (v || '').split(',')[0].trim();
             if (item.categoryName) parts.push(escapeHtml(item.categoryName));
+            if (Number(item.mediaCount) > 1) parts.push(escapeHtml(String(item.mediaCount) + ' media'));
             if (item.size) parts.push('Size: ' + escapeHtml(s(item.size)));
             if (item.color) parts.push('Color: ' + escapeHtml(s(item.color)));
             if (item.qty) parts.push('Qty: ' + escapeHtml(s(item.qty)));

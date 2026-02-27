@@ -11,6 +11,7 @@
             var s = function(v) { return (v || '').split(',')[0].trim(); };
             return [
                 item.categoryName,
+                item.mediaCount > 1 && (item.mediaCount + ' media'),
                 item.size && ('Size: ' + s(item.size)),
                 item.color && ('Color: ' + s(item.color)),
                 item.qty && ('Qty: ' + s(item.qty))
@@ -44,8 +45,8 @@
 <body>
     <div class="container">
         <h2>Item Price: <%= item.price %></h2>
-        <% if (item.size || item.color || item.qty) { %>
-        <p style="color:#666; font-size:14px; margin-top:8px;"><%= (function(){ var s=function(v){ return (v||'').split(',')[0].trim(); }; return [item.categoryName, item.size && ('Size: ' + s(item.size)), item.color && ('Color: ' + s(item.color)), item.qty && ('Qty: ' + s(item.qty))].filter(Boolean).join(' | '); })() %></p>
+        <% if (item.categoryName || item.mediaCount > 1 || item.size || item.color || item.qty) { %>
+        <p style="color:#666; font-size:14px; margin-top:8px;"><%= (function(){ var s=function(v){ return (v||'').split(',')[0].trim(); }; return [item.categoryName, item.mediaCount > 1 && (item.mediaCount + ' media'), item.size && ('Size: ' + s(item.size)), item.color && ('Color: ' + s(item.color)), item.qty && ('Qty: ' + s(item.qty))].filter(Boolean).join(' | '); })() %></p>
         <% } %>
 
         <% if (item.type === 'video') { %>

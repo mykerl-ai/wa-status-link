@@ -363,11 +363,12 @@
                         </div>
                         <div class="card-meta">
                             <% if (p.categoryName) { %><span class="card-category"><%= p.categoryName %></span><% } %>
+                            <% if (p.mediaCount && p.mediaCount > 1) { %><span><%= p.mediaCount %> media</span><% } %>
                             <% if (p.size || p.color || p.qty) { %>
                                 <% if (p.size) { %><span>Size: <%= (p.size || '').split(',')[0].trim() %></span><% } %>
                                 <% if (p.color) { %><span>Color: <%= (p.color || '').split(',')[0].trim() %></span><% } %>
                                 <% if (p.qty) { %><span>Qty: <%= (p.qty || '').split(',')[0].trim() %></span><% } %>
-                            <% } else if (!p.categoryName) { %>
+                            <% } else if (!p.categoryName && !(p.mediaCount && p.mediaCount > 1)) { %>
                                 <span class="card-meta-empty">—</span>
                             <% } %>
                         </div>

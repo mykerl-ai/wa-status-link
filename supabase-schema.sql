@@ -251,6 +251,64 @@ create policy "products_delete_owner"
   on public.products for delete
   using (auth.uid() = owner_id);
 
+-- Product media (multiple photos/videos per product).
+create table if not exists public.product_media (
+  id uuid primary key default gen_random_uuid(),
+  product_id uuid not null references public.products(id) on delete cascade,
+  owner_id uuid references auth.users(id) on delete cascade,
+  public_id text not null,
+  media_type text not null default 'image' check (media_type in ('image', 'video')),
+  preview_url text not null,
+  source_url text,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  unique(product_id, public_id)
+);
+
+alter table public.product_media
+  add column if not exists product_id uuid references public.products(id) on delete cascade;
+alter table public.product_media
+  add column if not exists owner_id uuid references auth.users(id) on delete cascade;
+alter table public.product_media
+  add column if not exists public_id text;
+alter table public.product_media
+  add column if not exists media_type text not null default 'image';
+alter table public.product_media
+  add column if not exists preview_url text;
+alter table public.product_media
+  add column if not exists source_url text;
+alter table public.product_media
+  add column if not exists sort_order int not null default 0;
+alter table public.product_media
+  add column if not exists created_at timestamptz not null default now();
+
+create index if not exists product_media_product_id_idx on public.product_media(product_id, sort_order, created_at);
+create index if not exists product_media_owner_id_idx on public.product_media(owner_id, created_at desc);
+
+alter table public.product_media enable row level security;
+
+drop policy if exists "product_media_select_public" on public.product_media;
+drop policy if exists "product_media_insert_owner" on public.product_media;
+drop policy if exists "product_media_update_owner" on public.product_media;
+drop policy if exists "product_media_delete_owner" on public.product_media;
+
+create policy "product_media_select_public"
+  on public.product_media for select
+  using (true);
+
+create policy "product_media_insert_owner"
+  on public.product_media for insert
+  with check (auth.uid() = owner_id);
+
+create policy "product_media_update_owner"
+  on public.product_media for update
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+create policy "product_media_delete_owner"
+  on public.product_media for delete
+  using (auth.uid() = owner_id);
+
 -- Carts (one row per signed-in user).
 create table if not exists public.carts (
   user_id uuid primary key references auth.users(id) on delete cascade,

@@ -410,6 +410,106 @@
         }
         .thumb-preview { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; background: var(--surface-secondary); }
         .price-row input { flex: 1; border: none; background: transparent; font-size: 15px; outline: none; }
+        .product-draft {
+            padding: 12px 16px 14px;
+            border-bottom: 0.5px solid var(--separator);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .product-draft:last-child {
+            border-bottom: none;
+        }
+        .product-draft-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .product-draft-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .product-draft-remove {
+            border: 0;
+            background: transparent;
+            color: #8d829b;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+        }
+        .product-media-label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: fit-content;
+            max-width: 100%;
+            padding: 9px 12px;
+            border-radius: 11px;
+            border: 1px solid var(--separator);
+            background: rgba(255,255,255,0.6);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .product-media-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .product-media-label.product-media-clear {
+            border: 1px dashed var(--separator);
+            background: rgba(255,255,255,0.48);
+            color: #8d829b;
+        }
+        .product-media-input {
+            display: none;
+        }
+        .product-media-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .product-media-item {
+            width: 52px;
+            height: 52px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid rgba(53,38,78,0.08);
+            background: var(--surface-secondary);
+        }
+        .product-media-item.video {
+            object-fit: cover;
+        }
+        .product-field-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .product-field-grid input,
+        .product-field-grid select {
+            width: 100%;
+            border: 1px solid var(--separator);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.72);
+            padding: 9px 10px;
+            font-size: 13px;
+            color: var(--text);
+            font-family: inherit;
+            outline: none;
+        }
+        .product-field-grid .field-span-2 {
+            grid-column: 1 / -1;
+        }
+        .product-draft-empty {
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
         .btn-primary {
             display: inline-flex;
             align-items: center;
@@ -811,19 +911,15 @@
             </div>
             <div class="list-row">
                 <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><rect x="8" y="8" width="8" height="8"/></svg>
-                <label>Category</label>
+                <label>Default category</label>
                 <select name="categoryId" id="categorySelect" class="app-select">
                     <option value="">None</option>
                 </select>
             </div>
             <div class="list-row">
                 <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>
-                <label>Details (optional)</label>
-                <div class="detail-fields" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-                    <input type="text" id="productSize" placeholder="Size" style="max-width:80px;">
-                    <input type="text" id="productColor" placeholder="Color" style="max-width:100px;">
-                    <input type="text" id="productQty" placeholder="Qty" style="max-width:70px;">
-                </div>
+                <label>Product details</label>
+                <span style="font-size:12px;color:var(--text-secondary);">Set per product below (price, size, color, qty, media).</span>
             </div>
         </div>
         <p class="list-group-title">Categories</p>
@@ -906,14 +1002,12 @@
         </section>
         <section class="studio-pane active" data-pane="upload" role="tabpanel" aria-labelledby="studioModeUpload">
         <p class="list-group-title">Media and links</p>
-        <p class="list-group-subtitle">Upload photos/videos, set prices, and generate all product links in one go.</p>
+        <p class="list-group-subtitle">Each product has its own price, details, category, and can include multiple photos/videos.</p>
         <div class="list-group">
-            <label class="list-row list-row-file" style="cursor:pointer;position:relative;">
-                <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                <span style="font-size:15px;color:var(--text);">Select photos or videos</span>
-                <input type="file" id="fileInput" name="files" multiple required accept="image/*,video/*" class="file-input-overlay">
-            </label>
-            <div id="priceInputs"></div>
+            <div id="productDraftList"></div>
+            <div class="list-row" style="justify-content:flex-start;">
+                <button type="button" class="option-chip selected" id="addProductBtn">Add product</button>
+            </div>
         </div>
         <button type="submit" class="btn-primary" id="uploadBtn">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/><path d="M5 21l2-6 4 2-2 6"/><path d="M19 21l-2-6-4 2 2 6"/></svg>
@@ -982,6 +1076,169 @@
 <script>
     const storeFrontLink = <%- JSON.stringify(typeof storeLink !== 'undefined' ? storeLink : '') %>;
     let categories = [];
+    let productDrafts = [];
+    let productDraftObjectUrls = [];
+
+    function createDraftId() {
+        return 'draft_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+    }
+
+    function getDefaultCategoryId() {
+        const sel = document.getElementById('categorySelect');
+        return sel && sel.value ? String(sel.value).trim() : '';
+    }
+
+    function makeProductDraft(seed) {
+        const source = seed || {};
+        return {
+            id: createDraftId(),
+            price: String(source.price || '').trim(),
+            size: String(source.size || '').trim(),
+            color: String(source.color || '').trim(),
+            qty: String(source.qty || '').trim(),
+            categoryId: String(source.categoryId || getDefaultCategoryId() || '').trim(),
+            files: Array.isArray(source.files) ? source.files : []
+        };
+    }
+
+    function ensureDraftProducts() {
+        if (!productDrafts.length) {
+            productDrafts.push(makeProductDraft());
+        }
+    }
+
+    function buildCategoryOptions(selectedId) {
+        const safeSelected = String(selectedId || '').trim();
+        let html = '<option value="">None</option>';
+        categories.forEach(function(c) {
+            const isSelected = safeSelected && safeSelected === c.id;
+            html += '<option value="' + escapeHtml(c.id) + '"' + (isSelected ? ' selected' : '') + '>' + escapeHtml(c.name) + '</option>';
+        });
+        return html;
+    }
+
+    function syncDraftCategories() {
+        const validIds = new Set(categories.map(function(c) { return c.id; }));
+        productDrafts.forEach(function(draft) {
+            if (draft.categoryId && !validIds.has(draft.categoryId)) {
+                draft.categoryId = '';
+            }
+        });
+    }
+
+    function renderProductDraftList() {
+        const host = document.getElementById('productDraftList');
+        if (!host) return;
+        if (productDraftObjectUrls.length) {
+            productDraftObjectUrls.forEach(function(url) {
+                try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
+            });
+            productDraftObjectUrls = [];
+        }
+        ensureDraftProducts();
+        syncDraftCategories();
+
+        if (!productDrafts.length) {
+            host.innerHTML = '<div class="product-draft-empty">No products yet. Add one below.</div>';
+            return;
+        }
+
+        host.innerHTML = '';
+        productDrafts.forEach(function(draft, index) {
+            const mediaPreview = draft.files.length
+                ? '<div class="product-media-grid">' + draft.files.map(function(file) {
+                    const url = URL.createObjectURL(file);
+                    productDraftObjectUrls.push(url);
+                    const isVideo = (file.type || '').startsWith('video/');
+                    if (isVideo) {
+                        return '<video class="product-media-item video" src="' + url + '" muted playsinline preload="metadata"></video>';
+                    }
+                    return '<img class="product-media-item" src="' + url + '" alt="">';
+                }).join('') + '</div>'
+                : '<div class="product-draft-empty" style="padding:0;color:var(--text-tertiary);">No media selected yet.</div>';
+
+            const removeButton = productDrafts.length > 1
+                ? '<button type="button" class="product-draft-remove" data-action="remove">Remove</button>'
+                : '';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'product-draft';
+            wrapper.setAttribute('data-index', String(index));
+            wrapper.innerHTML = ''
+                + '<div class="product-draft-head">'
+                + '  <span class="product-draft-title">Product ' + (index + 1) + '</span>'
+                + removeButton
+                + '</div>'
+                + '<div class="product-media-actions">'
+                + '  <label class="product-media-label">'
+                + '    <svg class="row-icon" style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'
+                + '    ' + (draft.files.length ? (draft.files.length + ' file' + (draft.files.length > 1 ? 's' : '')) : 'Select media')
+                + '    <input class="product-media-input" type="file" accept="image/*,video/*" multiple data-action="files-gallery">'
+                + '  </label>'
+                + '  <label class="product-media-label">Take photo<input class="product-media-input" type="file" accept="image/*" capture="environment" data-action="files-camera-image"></label>'
+                + '  <label class="product-media-label">Record video<input class="product-media-input" type="file" accept="video/*" capture="environment" data-action="files-camera-video"></label>'
+                + '  <button type="button" class="product-media-label product-media-clear" data-action="clear-files">Clear</button>'
+                + '</div>'
+                + mediaPreview
+                + '<div class="product-field-grid">'
+                + '  <input type="text" class="field-span-2" data-field="price" placeholder="Price (e.g. ₦32,000)" value="' + escapeHtml(draft.price) + '">'
+                + '  <input type="text" data-field="size" placeholder="Size" value="' + escapeHtml(draft.size) + '">'
+                + '  <input type="text" data-field="color" placeholder="Color" value="' + escapeHtml(draft.color) + '">'
+                + '  <input type="text" data-field="qty" placeholder="Qty" value="' + escapeHtml(draft.qty) + '">'
+                + '  <select class="field-span-2" data-field="categoryId">' + buildCategoryOptions(draft.categoryId) + '</select>'
+                + '</div>';
+
+            host.appendChild(wrapper);
+
+            const removeBtn = wrapper.querySelector('[data-action="remove"]');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    productDrafts.splice(index, 1);
+                    renderProductDraftList();
+                });
+            }
+
+            function attachMediaInput(selector) {
+                const input = wrapper.querySelector(selector);
+                if (!input) return;
+                input.addEventListener('change', function(ev) {
+                    const selected = Array.from((ev.target && ev.target.files) || []);
+                    if (selected.length) {
+                        draft.files = draft.files.concat(selected);
+                    }
+                    if (ev.target) ev.target.value = '';
+                    renderProductDraftList();
+                });
+            }
+            attachMediaInput('[data-action="files-gallery"]');
+            attachMediaInput('[data-action="files-camera-image"]');
+            attachMediaInput('[data-action="files-camera-video"]');
+
+            const clearBtn = wrapper.querySelector('[data-action="clear-files"]');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    draft.files = [];
+                    renderProductDraftList();
+                });
+            }
+
+            const priceInput = wrapper.querySelector('input[data-field="price"]');
+            if (priceInput) attachPriceInputFormatter(priceInput);
+
+            wrapper.querySelectorAll('input[data-field], select[data-field]').forEach(function(input) {
+                input.addEventListener('input', function() {
+                    const key = input.getAttribute('data-field');
+                    if (!key) return;
+                    draft[key] = String(input.value || '');
+                });
+                input.addEventListener('change', function() {
+                    const key = input.getAttribute('data-field');
+                    if (!key) return;
+                    draft[key] = String(input.value || '');
+                });
+            });
+        });
+    }
 
     async function loadCategories() {
         try {
@@ -1018,6 +1275,7 @@
             });
             if (vCur && categories.some(function(c) { return c.id === vCur; })) videoSel.value = vCur;
         }
+        renderProductDraftList();
     }
     function renderCategoryList() {
         const el = document.getElementById('categoryList');
@@ -1078,7 +1336,28 @@
         return Math.max(min, Math.min(max, value));
     }
 
+    renderProductDraftList();
     loadCategories();
+
+    const addProductBtnEl = document.getElementById('addProductBtn');
+    if (addProductBtnEl) {
+        addProductBtnEl.addEventListener('click', function() {
+            productDrafts.push(makeProductDraft());
+            renderProductDraftList();
+        });
+    }
+    const defaultCategorySel = document.getElementById('categorySelect');
+    if (defaultCategorySel) {
+        defaultCategorySel.addEventListener('change', function() {
+            const selectedDefault = getDefaultCategoryId();
+            if (selectedDefault) {
+                productDrafts.forEach(function(draft) {
+                    if (!draft.categoryId) draft.categoryId = selectedDefault;
+                });
+            }
+            renderProductDraftList();
+        });
+    }
 
     (function setupStudioModeTabs() {
         const uploadTab = document.getElementById('studioModeUpload');
@@ -1833,40 +2112,38 @@
         });
     }
 
-    // Logic to show Thumbnail + Price Input
-    document.getElementById('fileInput').onchange = (e) => {
-        const container = document.getElementById('priceInputs');
-        container.innerHTML = '';
-        const files = Array.from(e.target.files);
-
-        files.forEach((file, i) => {
-            const row = document.createElement('div');
-            row.className = 'price-row';
-            const isVideo = (file.type || '').startsWith('video/');
-            const media = document.createElement(isVideo ? 'video' : 'img');
-            media.className = 'thumb-preview';
-            if (isVideo) {
-                media.src = URL.createObjectURL(file);
-                media.muted = true;
-                media.playsInline = true;
-                media.preload = 'metadata';
-            } else {
-                const reader = new FileReader();
-                reader.onload = (event) => { media.src = event.target.result; };
-                reader.readAsDataURL(file);
+    function collectDraftProductsOrThrow() {
+        if (!productDrafts.length) {
+            throw new Error('Add at least one product.');
+        }
+        const payload = [];
+        let totalFiles = 0;
+        productDrafts.forEach(function(draft, idx) {
+            const productNo = idx + 1;
+            const files = Array.isArray(draft.files) ? draft.files.filter(Boolean) : [];
+            if (!files.length) {
+                throw new Error('Product ' + productNo + ' needs at least one image or video.');
             }
-            
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.name = 'prices';
-            input.placeholder = `Price (e.g. ₦32,000)`;
-            input.required = true;
-            attachPriceInputFormatter(input);
-            row.appendChild(media);
-            row.appendChild(input);
-            container.appendChild(row);
+            const normalizedPrice = normalizePriceText(draft.price || '');
+            if (!normalizedPrice) {
+                throw new Error('Enter a valid price for Product ' + productNo + '.');
+            }
+            draft.price = normalizedPrice;
+            payload.push({
+                price: normalizedPrice,
+                size: String(draft.size || '').trim(),
+                color: String(draft.color || '').trim(),
+                qty: String(draft.qty || '').trim(),
+                categoryId: String(draft.categoryId || '').trim(),
+                fileCount: files.length
+            });
+            totalFiles += files.length;
         });
-    };
+        if (!totalFiles) {
+            throw new Error('Select media for your products.');
+        }
+        return payload;
+    }
 
     document.getElementById('bulkForm').onsubmit = async (e) => {
         e.preventDefault();
@@ -1877,26 +2154,28 @@
         btn.textContent = 'Generating...';
         loader.style.display = 'block';
 
-        Array.from(e.target.querySelectorAll('input[name="prices"]')).forEach(function(inputEl) {
-            inputEl.value = normalizePriceText(inputEl.value);
-        });
-        const categorySelectEl = document.getElementById('categorySelect');
-        const selectedCategoryOption = categorySelectEl
-            && categorySelectEl.options
-            && categorySelectEl.options.length
-            ? categorySelectEl.options[categorySelectEl.selectedIndex]
-            : null;
-        const batchCategoryName = selectedCategoryOption && selectedCategoryOption.value
-            ? String(selectedCategoryOption.textContent || '').trim()
-            : '';
-        const batchSize = (document.getElementById('productSize') && document.getElementById('productSize').value || '').trim();
-        const batchColor = (document.getElementById('productColor') && document.getElementById('productColor').value || '').trim();
-        const batchQty = (document.getElementById('productQty') && document.getElementById('productQty').value || '').trim();
-        const formData = new FormData(e.target);
+        let productPayload = [];
+        try {
+            productPayload = collectDraftProductsOrThrow();
+        } catch (validationErr) {
+            loader.style.display = 'none';
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+            alert(validationErr.message || 'Check product inputs and try again.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('bgColor', document.getElementById('bgColor').value || 'white');
+        formData.append('badgeLabel', document.getElementById('badgeLabel').value || '');
         formData.append('removeBg', document.getElementById('removeBgToggle').checked);
-        formData.append('size', batchSize);
-        formData.append('color', batchColor);
-        formData.append('qty', batchQty);
+        formData.append('productsPayload', JSON.stringify(productPayload));
+        productDrafts.forEach(function(draft) {
+            const files = Array.isArray(draft.files) ? draft.files : [];
+            files.forEach(function(file) {
+                formData.append('files', file);
+            });
+        });
 
         try {
             const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
@@ -1910,10 +2189,10 @@
                 return {
                     ...item,
                     price: normalizePriceText(item.price || ''),
-                    categoryName: (item.categoryName || batchCategoryName || '').trim(),
-                    size: (item.size || batchSize || '').trim(),
-                    color: (item.color || batchColor || '').trim(),
-                    qty: (item.qty || batchQty || '').trim()
+                    categoryName: (item.categoryName || '').trim(),
+                    size: (item.size || '').trim(),
+                    color: (item.color || '').trim(),
+                    qty: (item.qty || '').trim()
                 };
             });
             currentIndex = 0;
@@ -1930,6 +2209,8 @@
             }
             toast.classList.add('show');
             setTimeout(function() { toast.classList.remove('show'); }, 3000);
+            productDrafts = [makeProductDraft()];
+            renderProductDraftList();
         } catch (err) {
             alert((err && err.message) || 'Upload failed');
         } finally {
@@ -1999,6 +2280,7 @@
             const parts = [];
             const s = (v) => (v || '').split(',')[0].trim();
             if (item.categoryName) parts.push(escapeHtml(item.categoryName));
+            if (Number(item.mediaCount) > 1) parts.push(escapeHtml(String(item.mediaCount) + ' media'));
             if (item.size) parts.push('Size: ' + escapeHtml(s(item.size)));
             if (item.color) parts.push('Color: ' + escapeHtml(s(item.color)));
             if (item.qty) parts.push('Qty: ' + escapeHtml(s(item.qty)));

@@ -24,7 +24,13 @@ const {
 } = require('./lib/MediaPipeline');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({
+    dest: 'uploads/',
+    limits: {
+        files: 80,
+        fieldSize: 5 * 1024 * 1024
+    }
+});
 dotenv.config();
 const supabaseUrl = process.env.SUPABASE_URL || 'https://jfsqdzfeqgfmmkfzhrmq.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
@@ -1532,19 +1538,75 @@ app.get('/', requireOwner, async (req, res) => {
 });
 
 // 6. BULK UPLOAD ROUTE (owner only)
-app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, res) => {
+app.post('/upload-bulk', requireOwner, upload.array('files', 80), async (req, res) => {
     try {
-        const prices = Array.isArray(req.body.prices) ? req.body.prices : [req.body.prices];
-        const bgColor = req.body.bgColor || "white";
+        const files = Array.isArray(req.files) ? req.files : [];
+        if (!files.length) {
+            return res.status(400).json({ success: false, error: 'Select at least one image or video.' });
+        }
+
+        const bgColor = req.body.bgColor || 'white';
         const shouldRemoveBg = String(req.body.removeBg) === 'true';
         const badgeLabel = normalizeBadgeLabel(req.body.badgeLabel);
-        const size = normalizeSingleField(req.body.size);
-        const color = normalizeSingleField(req.body.color);
-        const qty = normalizeSingleField(req.body.qty);
+        const legacyPrices = Array.isArray(req.body.prices) ? req.body.prices : [req.body.prices];
+        const legacySize = normalizeSingleField(req.body.size);
+        const legacyColor = normalizeSingleField(req.body.color);
+        const legacyQty = normalizeSingleField(req.body.qty);
         const rawCategoryId = req.body.categoryId;
-        const categoryId = Array.isArray(rawCategoryId)
-            ? (rawCategoryId[0] && String(rawCategoryId[0]).trim()) || null
-            : (rawCategoryId && String(rawCategoryId).trim()) || null;
+        const legacyCategoryId = Array.isArray(rawCategoryId)
+            ? (rawCategoryId[0] && String(rawCategoryId[0]).trim()) || ''
+            : (rawCategoryId && String(rawCategoryId).trim()) || '';
+
+        let productSpecs = [];
+        const rawProductsPayload = normalizeSingleField(req.body.productsPayload);
+        if (rawProductsPayload) {
+            let parsed = null;
+            try {
+                parsed = JSON.parse(rawProductsPayload);
+            } catch (parseErr) {
+                return res.status(400).json({ success: false, error: 'Invalid products payload.' });
+            }
+            if (!Array.isArray(parsed) || !parsed.length) {
+                return res.status(400).json({ success: false, error: 'No products were provided.' });
+            }
+
+            productSpecs = parsed
+                .map((entry) => {
+                    const fileCount = Math.max(0, Math.floor(Number(entry?.fileCount) || 0));
+                    return {
+                        price: normalizePriceLabel(entry?.price, 'Contact for Price'),
+                        size: normalizeSingleField(entry?.size),
+                        color: normalizeSingleField(entry?.color),
+                        qty: normalizeSingleField(entry?.qty),
+                        categoryId: normalizeSingleField(entry?.categoryId),
+                        fileCount
+                    };
+                })
+                .filter((spec) => spec.fileCount > 0);
+
+            if (!productSpecs.length) {
+                return res.status(400).json({ success: false, error: 'Each product must include at least one media file.' });
+            }
+        } else {
+            // Backward compatibility: one file = one product.
+            productSpecs = files.map((_, index) => ({
+                price: normalizePriceLabel(legacyPrices[index], 'Contact for Price'),
+                size: legacySize,
+                color: legacyColor,
+                qty: legacyQty,
+                categoryId: legacyCategoryId,
+                fileCount: 1
+            }));
+        }
+
+        const expectedFiles = productSpecs.reduce((sum, spec) => sum + (spec.fileCount || 0), 0);
+        if (expectedFiles !== files.length) {
+            return res.status(400).json({
+                success: false,
+                error: 'Uploaded files do not match products. Please reselect files and try again.'
+            });
+        }
+
         const results = [];
         const host = req.get('host');
         const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -1555,8 +1617,8 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
         const scopedCategoryService = requestSupabase && !supabaseServiceKey
             ? new CategoryService(requestSupabase)
             : categoryService;
-        let categoryName = '';
         let ownerStore = null;
+        let categoryNameById = {};
 
         try {
             ownerStore = await ensureOwnerStore(
@@ -1568,90 +1630,116 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
         } catch (storeErr) {
             console.error('Store resolution failed during upload:', storeErr.message);
         }
+
         if (!ownerStore?.logoPublicId) {
             return res.status(400).json({
                 success: false,
                 error: 'Set up your brand logo first. Open Logo onboarding and select a logo before uploading.'
             });
         }
-        if (categoryId && scopedCategoryService && req.user?.id) {
+
+        const requestedCategoryIds = [...new Set(productSpecs.map((spec) => spec.categoryId).filter(Boolean))];
+        if (requestedCategoryIds.length && scopedCategoryService && req.user?.id) {
             try {
                 const cats = await scopedCategoryService.list(req.user.id);
-                categoryName = (cats.find((c) => c.id === categoryId)?.name || '').trim();
+                categoryNameById = Object.fromEntries((cats || []).map((cat) => [cat.id, cat.name]));
+                const invalidCategoryId = requestedCategoryIds.find((id) => !categoryNameById[id]);
+                if (invalidCategoryId) {
+                    return res.status(400).json({ success: false, error: 'One or more products use an invalid category.' });
+                }
             } catch (categoryErr) {
-                console.error('Category name lookup failed during upload:', categoryErr.message);
+                console.error('Category lookup failed during upload:', categoryErr.message);
             }
         }
 
-        for (let i = 0; i < req.files.length; i++) {
-            const file = req.files[i];
-            const price = normalizePriceLabel(prices[i], 'Contact for Price');
-            const mediaType = (file.mimetype || '').startsWith('video/') ? 'video' : 'image';
-            const uploadOptions = { resource_type: mediaType };
-            if (mediaType === 'image') {
-                uploadOptions.transformation = buildImageTransformations({
-                    shouldRemoveBg,
-                    bgColor,
-                    badgeLabel,
-                    logoPublicId: ownerStore.logoPublicId
+        let fileCursor = 0;
+        for (let productIndex = 0; productIndex < productSpecs.length; productIndex++) {
+            const spec = productSpecs[productIndex];
+            const productFiles = files.slice(fileCursor, fileCursor + spec.fileCount);
+            fileCursor += spec.fileCount;
+            if (!productFiles.length) continue;
+
+            const mediaAssets = [];
+            for (let fileIndex = 0; fileIndex < productFiles.length; fileIndex++) {
+                const file = productFiles[fileIndex];
+                const mediaType = (file.mimetype || '').startsWith('video/') ? 'video' : 'image';
+                const uploadOptions = { resource_type: mediaType };
+                if (mediaType === 'image') {
+                    uploadOptions.transformation = buildImageTransformations({
+                        shouldRemoveBg,
+                        bgColor,
+                        badgeLabel,
+                        logoPublicId: ownerStore.logoPublicId
+                    });
+                }
+
+                const uploadResult = await cloudinary.uploader.upload(file.path, uploadOptions);
+                const previewUrl = mediaType === 'video'
+                    ? buildVideoAnimatedPreviewUrl(cloudinary, uploadResult.public_id)
+                    : buildImagePreviewUrl(cloudinary, {
+                        publicId: uploadResult.public_id,
+                        bgColor
+                    });
+
+                inventoryStatus[uploadResult.public_id] = {
+                    price: spec.price,
+                    type: mediaType,
+                    isSoldOut: false,
+                    badgeLabel
+                };
+                mediaAssets.push({
+                    publicId: uploadResult.public_id,
+                    mediaType,
+                    previewUrl,
+                    sourceUrl: uploadResult.secure_url || uploadResult.url || '',
+                    sortOrder: fileIndex
                 });
             }
 
-            const result = await cloudinary.uploader.upload(file.path, uploadOptions);
-            const previewUrl = mediaType === 'video'
-                ? buildVideoAnimatedPreviewUrl(cloudinary, result.public_id)
-                : buildImagePreviewUrl(cloudinary, {
-                    publicId: result.public_id,
-                    bgColor
-                });
-
-            inventoryStatus[result.public_id] = {
-                price,
-                type: mediaType,
-                isSoldOut: false,
-                badgeLabel
-            };
+            if (!mediaAssets.length) continue;
+            const primary = mediaAssets[0];
             const link = buildProductLink({
                 protocol,
                 host,
-                publicId: result.public_id,
-                price,
+                publicId: primary.publicId,
+                price: spec.price,
                 bgColor,
-                removeBg: shouldRemoveBg && mediaType === 'image',
+                removeBg: shouldRemoveBg && primary.mediaType === 'image',
                 badgeLabel,
-                mediaType,
+                mediaType: primary.mediaType,
                 storeSlug: ownerStore?.slug || ''
             });
 
             results.push({
                 link,
-                price,
-                previewUrl,
-                mediaType,
+                price: spec.price,
+                previewUrl: primary.previewUrl,
+                mediaType: primary.mediaType,
+                mediaCount: mediaAssets.length,
                 badgeLabel,
                 storeSlug: ownerStore?.slug || '',
-                categoryId: categoryId || '',
-                categoryName: categoryName || '',
-                size,
-                color,
-                qty
+                categoryId: spec.categoryId || '',
+                categoryName: categoryNameById[spec.categoryId] || '',
+                size: spec.size,
+                color: spec.color,
+                qty: spec.qty
             });
 
-            // Save product to Supabase (skipped if SUPABASE_ANON_KEY / SUPABASE_SERVICE_KEY not set)
             if (scopedProductService) {
                 try {
                     await scopedProductService.create({
-                        publicId: result.public_id,
-                        price,
+                        publicId: primary.publicId,
+                        price: spec.price,
                         link,
-                        previewUrl,
+                        previewUrl: primary.previewUrl,
                         bgColor,
                         badgeLabel,
-                        size,
-                        color,
-                        qty,
+                        size: spec.size,
+                        color: spec.color,
+                        qty: spec.qty,
                         ownerId: req.user ? req.user.id : null,
-                        categoryId: categoryId || null
+                        categoryId: spec.categoryId || null,
+                        mediaItems: mediaAssets
                     });
                 } catch (dbErr) {
                     console.error('Product save error:', dbErr.message, dbErr.code || '', dbErr.details || '');
@@ -1660,6 +1748,11 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
                 }
             }
         }
+
+        if (!results.length) {
+            return res.status(400).json({ success: false, error: 'No products were uploaded. Check your media files and try again.' });
+        }
+
         res.json({
             success: true,
             items: results,
@@ -1667,7 +1760,7 @@ app.post('/upload-bulk', requireOwner, upload.array('files', 10), async (req, re
             dbError: res.locals.dbError || null
         });
     } catch (err) {
-        console.error("Cloudinary Error:", err);
+        console.error('Cloudinary Error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -1852,7 +1945,8 @@ app.get('/p/:publicId', async (req, res) => {
         size: '',
         color: '',
         qty: '',
-        categoryName: ''
+        categoryName: '',
+        mediaCount: 0
     };
     let productOwnerId = null;
     let productCategoryId = null;
@@ -1864,6 +1958,7 @@ app.get('/p/:publicId', async (req, res) => {
                 item.size = product.size || '';
                 item.color = product.color || '';
                 item.qty = product.qty || '';
+                item.mediaCount = Number(product.mediaCount || 0) || 0;
                 productOwnerId = product.ownerId || null;
                 productCategoryId = product.categoryId || null;
             }
