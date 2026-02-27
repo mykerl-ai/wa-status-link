@@ -970,6 +970,8 @@
                         </svg>
                     </button>
                     <button type="button" class="option-chip" id="audioLibraryRefreshBtn">Refresh songs</button>
+                    <button type="button" class="option-chip" id="uploadAudioBtn">Upload full song</button>
+                    <input type="file" id="audioUploadInput" accept="audio/*" style="display:none;">
                     <button type="button" class="option-chip" id="clearAudioBtn">Clear audio</button>
                 </div>
                 <span id="selectedAudioLabel" style="font-size:12px;color:var(--text-secondary);width:100%;">No song selected</span>
@@ -980,6 +982,7 @@
                         <button type="button" class="audio-segment-btn active" id="audioTabHottest" role="tab" aria-selected="true">Hottest</button>
                         <button type="button" class="audio-segment-btn" id="audioTabLatest" role="tab" aria-selected="false">Latest</button>
                         <button type="button" class="audio-segment-btn" id="audioTabThrowback" role="tab" aria-selected="false">Throwback 2010s</button>
+                        <button type="button" class="audio-segment-btn" id="audioTabFull" role="tab" aria-selected="false">Full tracks</button>
                     </div>
                     <input type="text" id="audioSearchInput" class="audio-search-input" placeholder="Search by title or artist">
                 </div>
@@ -1397,6 +1400,8 @@
         const transitionDurationInput = document.getElementById('videoTransitionDuration');
         const audioLibraryBtn = document.getElementById('audioLibraryBtn');
         const audioLibraryRefreshBtn = document.getElementById('audioLibraryRefreshBtn');
+        const uploadAudioBtn = document.getElementById('uploadAudioBtn');
+        const audioUploadInput = document.getElementById('audioUploadInput');
         const clearAudioBtn = document.getElementById('clearAudioBtn');
         const selectedAudioLabel = document.getElementById('selectedAudioLabel');
         const audioLibraryPanel = document.getElementById('audioLibraryPanel');
@@ -1405,6 +1410,7 @@
         const audioTabHottest = document.getElementById('audioTabHottest');
         const audioTabLatest = document.getElementById('audioTabLatest');
         const audioTabThrowback = document.getElementById('audioTabThrowback');
+        const audioTabFull = document.getElementById('audioTabFull');
         const audioSearchInput = document.getElementById('audioSearchInput');
         const statusEl = document.getElementById('videoStatus');
         const resultEl = document.getElementById('videoResult');
@@ -1416,7 +1422,7 @@
         let pollInterval = null;
         let audioPanelOpen = false;
         let audioTracksLoading = false;
-        let audioCollections = { hottest: [], latest: [], throwback: [] };
+        let audioCollections = { hottest: [], latest: [], throwback: [], full: [] };
         let activeAudioBucket = 'hottest';
         const PINNED_THROWBACK_MATCH = {
             titleIncludes: 'good feeling',
@@ -1442,6 +1448,7 @@
         function setAudioButtonsBusy(isBusy) {
             if (audioLibraryBtn) audioLibraryBtn.disabled = isBusy;
             if (audioLibraryRefreshBtn) audioLibraryRefreshBtn.disabled = isBusy;
+            if (uploadAudioBtn) uploadAudioBtn.disabled = isBusy;
         }
         function stopPolling() {
             if (pollInterval) {
@@ -1543,6 +1550,12 @@
             if (rawText) return rawText.slice(0, 180);
             return fallback || 'Request failed';
         }
+        function mapAudioUploadError(result) {
+            const status = Number(result && result.status) || 0;
+            if (status === 413) return 'Audio file is too large. Try a smaller file.';
+            if (status === 415) return 'Unsupported audio format. Use MP3, M4A, WAV, AAC, OGG, FLAC, or OPUS.';
+            return mapVideoRequestError(result, 'Audio upload failed');
+        }
         function formatDuration(seconds) {
             const n = Number(seconds);
             if (!Number.isFinite(n) || n <= 0) return '';
@@ -1618,7 +1631,7 @@
         function getAllTracks() {
             const merged = [];
             const seen = new Set();
-            ['hottest', 'latest', 'throwback'].forEach(function(bucket) {
+            ['hottest', 'latest', 'throwback', 'full'].forEach(function(bucket) {
                 (audioCollections[bucket] || []).forEach(function(track) {
                     if (!track || !track.previewUrl) return;
                     const key = track.id || track.previewUrl;
@@ -1727,6 +1740,11 @@
                 audioTabThrowback.classList.toggle('active', isActive);
                 audioTabThrowback.setAttribute('aria-selected', isActive ? 'true' : 'false');
             }
+            if (audioTabFull) {
+                const isActive = activeAudioBucket === 'full';
+                audioTabFull.classList.toggle('active', isActive);
+                audioTabFull.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            }
         }
         function showAudioPanel(shouldShow, options) {
             if (!audioLibraryPanel) return;
@@ -1782,7 +1800,7 @@
                 if (track.artist) pieces.push(track.artist);
                 if (durationText) pieces.push(durationText);
                 if (releaseText) pieces.push(releaseText);
-                sub.textContent = pieces.join(' â€¢ ') || 'Nigerian chart song';
+                sub.textContent = pieces.join(' • ') || (activeAudioBucket === 'full' ? 'Full-length stream' : 'Nigerian chart preview');
 
                 meta.appendChild(title);
                 meta.appendChild(sub);
@@ -1799,6 +1817,8 @@
                         const year = Number(track.releaseYear || parseReleaseYear(track.releaseDate) || 0);
                         badge.textContent = year >= 2010 && year <= 2019 ? String(year) : '2010s';
                     }
+                } else if (activeAudioBucket === 'full') {
+                    badge.textContent = 'FULL';
                 } else {
                     badge.textContent = isFreshRelease(track.releaseDate) ? 'NEW' : 'LATEST';
                 }
@@ -1815,7 +1835,7 @@
                 sourceLink.href = track.pageUrl || '#';
                 sourceLink.target = '_blank';
                 sourceLink.rel = 'noopener';
-                sourceLink.textContent = 'Open in Apple Music';
+                sourceLink.textContent = activeAudioBucket === 'full' ? 'Open source' : 'Open in Apple Music';
                 if (!track.pageUrl) {
                     sourceLink.style.opacity = '0.5';
                     sourceLink.style.pointerEvents = 'none';
@@ -1895,6 +1915,9 @@
                 const throwback = Array.isArray(data.nostalgicTracks)
                     ? data.nostalgicTracks
                     : (Array.isArray(data.throwbackTracks) ? data.throwbackTracks : []);
+                const fullTracks = Array.isArray(data.fullTracks)
+                    ? data.fullTracks
+                    : (Array.isArray(data.longTracks) ? data.longTracks : []);
                 audioCollections.hottest = hottest.filter(function(track) {
                     const sourceText = String(track && track.source || '');
                     return track
@@ -1915,6 +1938,11 @@
                         && track.previewUrl
                         && /^https?:\/\//i.test(track.previewUrl)
                         && !/internet archive/i.test(sourceText);
+                });
+                audioCollections.full = fullTracks.filter(function(track) {
+                    return track
+                        && track.previewUrl
+                        && /^https?:\/\//i.test(track.previewUrl);
                 });
                 if (!audioCollections.throwback.length) {
                     const mergedBase = []
@@ -1960,16 +1988,17 @@
                 if (!audioCollections[activeAudioBucket].length) {
                     if (audioCollections.hottest.length) activeAudioBucket = 'hottest';
                     else if (audioCollections.latest.length) activeAudioBucket = 'latest';
-                    else activeAudioBucket = 'throwback';
+                    else if (audioCollections.throwback.length) activeAudioBucket = 'throwback';
+                    else activeAudioBucket = 'full';
                 }
                 updateAudioTabState();
                 renderAudioTracks();
                 const sourceLabel = data.source || (audioCollections.hottest.length ? 'iTunes Search' : 'Song feed');
                 const activeCount = getVisibleTracks().length;
-                setAudioStatus(sourceLabel + ' â€¢ ' + activeCount + ' songs');
+                setAudioStatus(sourceLabel + ' • ' + activeCount + ' songs (charts are 30s previews; use Full tracks/upload for full length)');
                 setSelectedAudioLabelValue(null);
             } catch (e) {
-                audioCollections = { hottest: [], latest: [], throwback: [] };
+                audioCollections = { hottest: [], latest: [], throwback: [], full: [] };
                 renderAudioTracks();
                 setAudioStatus(e.message || 'Could not fetch songs right now.');
             } finally {
@@ -2015,9 +2044,67 @@
                 renderAudioTracks();
             });
         }
+        if (audioTabFull) {
+            audioTabFull.addEventListener('click', function() {
+                activeAudioBucket = 'full';
+                updateAudioTabState();
+                renderAudioTracks();
+            });
+        }
         if (audioSearchInput) {
             audioSearchInput.addEventListener('input', function() {
                 renderAudioTracks();
+            });
+        }
+        async function uploadAudioFile(file) {
+            if (!file) return;
+            const originalBtnText = uploadAudioBtn ? uploadAudioBtn.textContent : '';
+            try {
+                if (uploadAudioBtn) {
+                    uploadAudioBtn.disabled = true;
+                    uploadAudioBtn.textContent = 'Uploading...';
+                }
+                setAudioStatus('Uploading full song...');
+                const formData = new FormData();
+                formData.append('audio', file, file.name || ('audio-' + Date.now() + '.mp3'));
+                const response = await requestJsonWithFallback('/api/audio/upload', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    timeoutMs: 120000
+                });
+                const data = response.data || {};
+                if (!response.ok) {
+                    throw new Error(mapAudioUploadError(response));
+                }
+                if (!data.url) {
+                    throw new Error('Audio upload completed but no usable URL was returned.');
+                }
+                if (audioInput) audioInput.value = data.url;
+                setSelectedAudioLabelValue({
+                    title: file.name || 'Uploaded song',
+                    artist: 'Full track'
+                });
+                setAudioStatus('Uploaded full song selected. Ready to generate.');
+                renderAudioTracks();
+                showAudioPanel(false, { scrollToGenerate: true });
+            } catch (err) {
+                setAudioStatus(err && err.message ? err.message : 'Audio upload failed.');
+            } finally {
+                if (uploadAudioBtn) {
+                    uploadAudioBtn.disabled = false;
+                    uploadAudioBtn.textContent = originalBtnText || 'Upload full song';
+                }
+                if (audioUploadInput) audioUploadInput.value = '';
+            }
+        }
+        if (uploadAudioBtn && audioUploadInput) {
+            uploadAudioBtn.addEventListener('click', function() {
+                audioUploadInput.click();
+            });
+            audioUploadInput.addEventListener('change', async function() {
+                const file = audioUploadInput.files && audioUploadInput.files[0] ? audioUploadInput.files[0] : null;
+                await uploadAudioFile(file);
             });
         }
         if (audioInput) {
@@ -2035,7 +2122,7 @@
             audioLibraryBtn.addEventListener('click', async function() {
                 const shouldOpen = !audioPanelOpen;
                 showAudioPanel(shouldOpen);
-                if (shouldOpen && !audioCollections.hottest.length && !audioCollections.latest.length && !audioCollections.throwback.length) {
+                if (shouldOpen && !audioCollections.hottest.length && !audioCollections.latest.length && !audioCollections.throwback.length && !audioCollections.full.length) {
                     await loadAudioTracks(false);
                 }
             });

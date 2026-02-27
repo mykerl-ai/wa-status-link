@@ -84,6 +84,8 @@ const NAIJA_AUDIO_CACHE_TTL_MS = 10 * 60 * 1000;
 const NAIJA_AUDIO_DEFAULT_LIMIT = 12;
 const ITUNES_NG_TOP_SONGS_URL = 'https://itunes.apple.com/ng/rss/topsongs/limit=100/json';
 const ITUNES_SEARCH_URL = 'https://itunes.apple.com/search';
+const AUDIUS_API_BASE_URL = 'https://api.audius.co';
+const AUDIUS_APP_NAME = 'wa_status_link';
 const NAIJA_AUDIO_SEARCH_SEEDS = [
     'Davido',
     'Burna Boy',
@@ -108,6 +110,16 @@ const NOSTALGIA_2010S_SEARCH_SEEDS = [
     'Bruno Mars Grenade',
     'Calvin Harris Summer'
 ];
+const AUDIUS_FULL_TRACK_SEARCH_SEEDS = [
+    'burna boy',
+    'wizkid',
+    'davido',
+    'tems',
+    'ayra starr',
+    'asake',
+    'afrobeats',
+    'nigeria afro pop'
+];
 const PINNED_THROWBACK_SEEDS = [
     'Flo Rida Good Feeling',
     'Flo Rida - Good Feeling',
@@ -130,7 +142,8 @@ let naijaAudioCache = {
         updatedAt: '',
         hottestTracks: [],
         latestTracks: [],
-        nostalgicTracks: []
+        nostalgicTracks: [],
+        fullTracks: []
     }
 };
 let pinnedThrowbackTrackCache = {
@@ -423,6 +436,49 @@ async function fetchItunesSearchTracks(term, limit = 30, options = {}) {
         .filter(Boolean);
 }
 
+function mapAudiusTrack(item, fallbackRank = 9999, sourceLabel = 'Audius Full Streams') {
+    const streamUrl = sanitizeVideoAudioUrl(item?.stream?.url || '');
+    if (!streamUrl) return null;
+    const releaseDate = normalizeTextValue(item?.release_date || item?.created_at);
+    const artwork = item?.artwork || {};
+    const permalink = normalizeTextValue(item?.permalink);
+    const pageUrl = permalink ? sanitizeVideoAudioUrl(`https://audius.co${permalink}`) : '';
+    const id = normalizeTextValue(item?.id || item?.track_id) || streamUrl;
+    return {
+        id,
+        title: normalizeTextValue(item?.title) || 'Untitled',
+        artist: normalizeTextValue(item?.user?.name || item?.user?.handle || item?.artist) || 'Unknown artist',
+        album: normalizeTextValue(item?.genre),
+        previewUrl: streamUrl,
+        artworkUrl: sanitizeVideoAudioUrl(artwork['1000x1000'] || artwork['480x480'] || artwork['150x150'] || ''),
+        pageUrl,
+        releaseDate,
+        releaseYear: parseReleaseYear(releaseDate),
+        releaseDateMs: parseReleaseDateMs(releaseDate),
+        durationSeconds: parseDurationSeconds(item?.duration),
+        rank: fallbackRank,
+        source: sourceLabel,
+        playCount: Number(item?.play_count || 0) || 0,
+        fullLength: true
+    };
+}
+
+async function fetchAudiusSearchTracks(term, limit = 20, options = {}) {
+    const query = normalizeTextValue(term);
+    if (!query) return [];
+    const sourceLabel = normalizeTextValue(options.source || 'Audius Full Streams') || 'Audius Full Streams';
+    const url = new URL(`${AUDIUS_API_BASE_URL}/v1/tracks/search`);
+    url.searchParams.set('query', query);
+    url.searchParams.set('app_name', AUDIUS_APP_NAME);
+    url.searchParams.set('limit', String(Math.max(5, Math.min(50, Math.round(Number(limit) || 20)))));
+
+    const data = await requestJsonWithTimeout(url.toString(), 15000);
+    const results = Array.isArray(data?.data) ? data.data : [];
+    return results
+        .map((item, idx) => mapAudiusTrack(item, 3000 + idx, sourceLabel))
+        .filter(Boolean);
+}
+
 function dedupeTracks(tracks) {
     const out = [];
     const seen = new Set();
@@ -464,7 +520,9 @@ function toPublicTrack(track, mode) {
         releaseYear: track.releaseYear,
         durationSeconds: track.durationSeconds,
         rank: mode === 'hottest' ? track.rank : undefined,
-        source: track.source
+        source: track.source,
+        playCount: Number(track.playCount || 0) || 0,
+        fullLength: !!track.fullLength
     };
 }
 
@@ -581,9 +639,6 @@ async function fetchNaijaAudioTracks({ limit = NAIJA_AUDIO_DEFAULT_LIMIT, query 
     if (normalizedQuery && filtered.length === 0) {
         filtered = mappedTracks;
     }
-    if (!filtered.length) {
-        throw new Error('No songs available right now.');
-    }
 
     let nostalgicPool = [...mappedTracks];
     let nostalgicFetchedCount = 0;
@@ -664,12 +719,47 @@ async function fetchNaijaAudioTracks({ limit = NAIJA_AUDIO_DEFAULT_LIMIT, query 
         : null;
     const ensuredNostalgicTracks = prependUniqueTrack(nostalgicTracks, pinnedThrowbackPublic, safeLimit);
 
+    const fullTrackTerms = normalizedQuery
+        ? [normalizedQuery, `${normalizedQuery} afrobeats`, `${normalizedQuery} nigeria`]
+        : AUDIUS_FULL_TRACK_SEARCH_SEEDS;
+    let fullTrackPool = [];
+    for (const term of fullTrackTerms) {
+        if (fullTrackPool.length >= (safeLimit * 4)) break;
+        try {
+            const fullTracks = await fetchAudiusSearchTracks(term, Math.max(10, safeLimit * 2), {
+                source: 'Audius Full Streams'
+            });
+            if (fullTracks.length) {
+                fullTrackPool.push(...fullTracks);
+                sourceSet.add('Audius Full Streams');
+            }
+        } catch {
+            // continue with other terms
+        }
+    }
+    fullTrackPool = dedupeTracks(fullTrackPool);
+    let filteredFullTrackPool = filterTracksByQuery(fullTrackPool, normalizedQuery);
+    if (normalizedQuery && filteredFullTrackPool.length === 0) {
+        filteredFullTrackPool = fullTrackPool;
+    }
+    const fullTracks = [...filteredFullTrackPool]
+        .sort((a, b) => {
+            if ((b.playCount || 0) !== (a.playCount || 0)) return (b.playCount || 0) - (a.playCount || 0);
+            return b.releaseDateMs - a.releaseDateMs;
+        })
+        .slice(0, safeLimit)
+        .map((track) => toPublicTrack(track, 'full'));
+    if (!hottestTracks.length && !latestTracks.length && !ensuredNostalgicTracks.length && !fullTracks.length) {
+        throw new Error('No songs available right now.');
+    }
+
     const payload = {
         source: Array.from(sourceSet).join(' + ') || 'iTunes Search',
         updatedAt: new Date().toISOString(),
         hottestTracks,
         latestTracks,
-        nostalgicTracks: ensuredNostalgicTracks
+        nostalgicTracks: ensuredNostalgicTracks,
+        fullTracks
     };
 
     naijaAudioCache = {
@@ -1126,6 +1216,22 @@ function cleanupTempFiles(files) {
     });
 }
 
+function isAudioUploadFile(file) {
+    const mime = String(file?.mimetype || '').toLowerCase();
+    const name = String(file?.originalname || '').toLowerCase();
+    if (mime.startsWith('audio/')) return true;
+    return /\.(mp3|m4a|aac|wav|ogg|oga|flac|opus|webm)$/i.test(name);
+}
+
+function safeAudioFileName(name = 'audio') {
+    const base = String(name || 'audio')
+        .replace(/[\\/:*?"<>|]+/g, '_')
+        .replace(/\s+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 80);
+    return base || 'audio';
+}
+
 // 3. HEALTH CHECK
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
@@ -1509,6 +1615,7 @@ async function handleNaijaSongsRequest(req, res) {
             hottestTracks: [],
             latestTracks: [],
             nostalgicTracks: [],
+            fullTracks: [],
             tracks: []
         });
     }
@@ -1516,6 +1623,54 @@ async function handleNaijaSongsRequest(req, res) {
 
 app.get('/api/hot-naija-songs', requireOwner, handleNaijaSongsRequest);
 app.get('/api/free-audio-tracks', requireOwner, handleNaijaSongsRequest);
+
+app.post('/api/audio/upload', requireOwner, upload.single('audio'), async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'Audio file is required.' });
+    if (!isAudioUploadFile(file)) {
+        cleanupTempFiles([file]);
+        return res.status(415).json({ error: 'Unsupported audio format. Use MP3, M4A, WAV, AAC, OGG, FLAC, or OPUS.' });
+    }
+    if (Number(file.size || 0) > (180 * 1024 * 1024)) {
+        cleanupTempFiles([file]);
+        return res.status(413).json({ error: 'Audio file is too large. Keep it under 180 MB.' });
+    }
+
+    try {
+        if (canGenerateCloudinaryAssets()) {
+            const uploadResult = await uploadMediaToCloudinary(file, {
+                resource_type: 'video',
+                folder: 'uploaded-audio'
+            });
+            cleanupTempFiles([file]);
+            return res.json({
+                success: true,
+                source: 'Uploaded audio',
+                url: uploadResult.secure_url,
+                publicId: uploadResult.public_id,
+                durationSeconds: parseDurationSeconds(uploadResult.duration)
+            });
+        }
+
+        const audioDir = path.join(__dirname, 'uploads', 'audio');
+        if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
+        const ext = path.extname(String(file.originalname || '')).toLowerCase() || '.mp3';
+        const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeAudioFileName(path.basename(file.originalname || 'audio', ext))}${ext}`;
+        const targetPath = path.join(audioDir, safeName);
+        fs.renameSync(file.path, targetPath);
+        const publicPath = `/uploads/audio/${encodeURIComponent(safeName)}`;
+
+        return res.json({
+            success: true,
+            source: 'Uploaded audio',
+            url: absoluteUrlFromPath(req, publicPath)
+        });
+    } catch (e) {
+        cleanupTempFiles([file]);
+        return res.status(500).json({ error: 'Could not upload audio file right now.' });
+    }
+});
 
 // 4c. CATEGORY VIDEO GENERATION (owner only)
 app.post('/api/generate-category-video', requireOwner, express.json(), async (req, res) => {
