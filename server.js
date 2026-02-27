@@ -1822,6 +1822,12 @@ function isPreviewBot(req) {
 }
 
 app.get('/p/:publicId', async (req, res) => {
+    // This route serves different HTML for bots vs browsers.
+    // Prevent caches from serving the wrong variant to link preview crawlers.
+    res.set('Cache-Control', 'no-store, max-age=0');
+    res.set('Pragma', 'no-cache');
+    res.set('Vary', 'User-Agent');
+
     const { publicId } = req.params;
     const price = normalizePriceLabel(req.query.price, 'Contact for Price');
     const bg = req.query.bg || "white";

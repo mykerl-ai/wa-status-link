@@ -1,14 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta property="og:title" content="Price: <%= item.price %>">
-    <meta property="og:description" content="<%= (function(){ var s=function(v){ return (v||'').split(',')[0].trim(); }; return [item.size && ('Size: ' + s(item.size)), item.color && ('Color: ' + s(item.color)), item.qty && ('Qty: ' + s(item.qty))].filter(Boolean).join(' · ') || 'View product and chat with vendor'; })() %>">
-    <meta property="og:image" content="<%= (typeof ogPreviewImage !== 'undefined' && ogPreviewImage) ? ogPreviewImage : previewImage %>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%
+        const ogImageUrl = (typeof ogPreviewImage !== 'undefined' && ogPreviewImage) ? ogPreviewImage : previewImage;
+        const safeCanonical = (typeof canonicalLink !== 'undefined' && canonicalLink) ? canonicalLink : '';
+        const storeName = (typeof store !== 'undefined' && store && store.name) ? String(store.name).trim() : '';
+        const metaDescription = (function() {
+            var s = function(v) { return (v || '').split(',')[0].trim(); };
+            return [
+                item.categoryName,
+                item.size && ('Size: ' + s(item.size)),
+                item.color && ('Color: ' + s(item.color)),
+                item.qty && ('Qty: ' + s(item.qty))
+            ].filter(Boolean).join(' | ') || 'View product and chat with vendor';
+        })();
+    %>
+    <title><%= storeName ? (storeName + ' | ') : '' %><%= item.price %> - Product</title>
+    <meta name="description" content="<%= metaDescription %>">
+    <% if (safeCanonical) { %><link rel="canonical" href="<%= safeCanonical %>"><% } %>
+    <meta property="og:title" content="<%= storeName ? (storeName + ' | ') : '' %>Price: <%= item.price %>">
+    <meta property="og:description" content="<%= metaDescription %>">
+    <meta property="og:image" content="<%= ogImageUrl %>">
+    <meta property="og:image:secure_url" content="<%= ogImageUrl %>">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="1200">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="product">
+    <% if (safeCanonical) { %><meta property="og:url" content="<%= safeCanonical %>"><% } %>
+    <meta property="og:site_name" content="<%= storeName || 'Products' %>">
     <meta name="twitter:card" content="summary_large_image">
-    
+    <meta name="twitter:title" content="<%= storeName ? (storeName + ' | ') : '' %>Price: <%= item.price %>">
+    <meta name="twitter:description" content="<%= metaDescription %>">
+    <meta name="twitter:image" content="<%= ogImageUrl %>">
+
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
         .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -20,13 +45,13 @@
     <div class="container">
         <h2>Item Price: <%= item.price %></h2>
         <% if (item.size || item.color || item.qty) { %>
-        <p style="color:#666; font-size:14px; margin-top:8px;"><%= (function(){ var s=function(v){ return (v||'').split(',')[0].trim(); }; return [item.size && ('Size: ' + s(item.size)), item.color && ('Color: ' + s(item.color)), item.qty && ('Qty: ' + s(item.qty))].filter(Boolean).join(' · '); })() %></p>
+        <p style="color:#666; font-size:14px; margin-top:8px;"><%= (function(){ var s=function(v){ return (v||'').split(',')[0].trim(); }; return [item.categoryName, item.size && ('Size: ' + s(item.size)), item.color && ('Color: ' + s(item.color)), item.qty && ('Qty: ' + s(item.qty))].filter(Boolean).join(' | '); })() %></p>
         <% } %>
 
         <% if (item.type === 'video') { %>
             <video controls><source src="<%= rawMediaUrl %>" type="video/mp4"></video>
         <% } else { %>
-            <img src="<%= (typeof ogPreviewImage !== 'undefined' && ogPreviewImage) ? ogPreviewImage : previewImage %>" alt="Product Image">
+            <img src="<%= ogImageUrl %>" alt="Product Image">
         <% } %>
 
         <a href="https://wa.me/2348053752505" class="btn">Chat with Vendor</a>
