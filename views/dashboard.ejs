@@ -840,7 +840,7 @@
         <% if (typeof storePath !== 'undefined' && storePath) { %>
         <a href="<%= storePath %>" style="font-size:13px;font-weight:500;color:var(--tint);text-decoration:none;">Storefront</a>
         <% } %>
-        <a href="/logout?next=/products" style="font-size:13px;font-weight:500;color:var(--text-secondary);text-decoration:none;">Log out</a>
+        <a href="/logout?next=/products" id="logoutLink" style="font-size:13px;font-weight:500;color:var(--text-secondary);text-decoration:none;">Log out</a>
     </div>
 </header>
 
@@ -1356,6 +1356,13 @@
                 });
             }
             renderProductDraftList();
+        });
+    }
+    const logoutLinkEl = document.getElementById('logoutLink');
+    if (logoutLinkEl) {
+        logoutLinkEl.addEventListener('click', function() {
+            // Ensure hard navigation path on Safari/webviews.
+            window.location.assign('/logout?next=/products');
         });
     }
 
@@ -2145,6 +2152,47 @@
         return payload;
     }
 
+    async function postUploadFormData(formData) {
+        try {
+            const res = await fetch('/upload-bulk', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            });
+            const text = await res.text();
+            let data = null;
+            try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+            return { ok: res.ok, status: res.status, data, rawText: text };
+        } catch (fetchErr) {
+            // Safari occasionally throws "Load failed" on fetch+multipart.
+            // Retry via XHR for better WebKit compatibility.
+            return new Promise(function(resolve, reject) {
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/upload-bulk', true);
+                    xhr.withCredentials = true;
+                    xhr.onload = function() {
+                        const text = xhr.responseText || '';
+                        let data = null;
+                        try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+                        resolve({
+                            ok: xhr.status >= 200 && xhr.status < 300,
+                            status: xhr.status,
+                            data,
+                            rawText: text
+                        });
+                    };
+                    xhr.onerror = function() {
+                        reject(new Error('Upload request failed (network).'));
+                    };
+                    xhr.send(formData);
+                } catch (xhrErr) {
+                    reject(fetchErr || xhrErr);
+                }
+            });
+        }
+    }
+
     document.getElementById('bulkForm').onsubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('uploadBtn');
@@ -2173,15 +2221,23 @@
         productDrafts.forEach(function(draft) {
             const files = Array.isArray(draft.files) ? draft.files : [];
             files.forEach(function(file) {
-                formData.append('files', file);
+                const fileName = (file && file.name) ? file.name : ('upload-' + Date.now());
+                formData.append('files', file, fileName);
             });
         });
 
         try {
-            const res = await fetch('/upload-bulk', { method: 'POST', body: formData });
-            const data = await res.json();
-            if (!res.ok || !data.success) {
-                throw new Error((data && data.error) || 'Upload failed');
+            const uploadResult = await postUploadFormData(formData);
+            const data = uploadResult.data || null;
+            if (!uploadResult.ok || !data || !data.success) {
+                if (uploadResult.status === 401 || uploadResult.status === 403) {
+                    window.location.href = '/login?next=' + encodeURIComponent('/');
+                    return;
+                }
+                const msg = (data && data.error)
+                    || (uploadResult.rawText && uploadResult.rawText.slice(0, 120))
+                    || 'Upload failed';
+                throw new Error(msg);
             }
 
             uploadQueue = (Array.isArray(data.items) ? data.items : []).map(function(item) {
