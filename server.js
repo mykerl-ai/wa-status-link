@@ -1519,6 +1519,7 @@ app.get('/api/free-audio-tracks', requireOwner, handleNaijaSongsRequest);
 
 // 4c. CATEGORY VIDEO GENERATION (owner only)
 app.post('/api/generate-category-video', requireOwner, express.json(), async (req, res) => {
+    res.set('Cache-Control', 'no-store');
     if (!videoJobQueue) return res.status(503).json({ error: 'Video generation not configured' });
     const categoryId = req.body?.categoryId ? String(req.body.categoryId).trim() : null;
     if (!categoryId) return res.status(400).json({ error: 'categoryId required' });
@@ -1528,6 +1529,15 @@ app.post('/api/generate-category-video', requireOwner, express.json(), async (re
     const requestedAudio = sanitizeVideoAudioUrl(req.body?.audioUrl);
     const fallbackAudio = sanitizeVideoAudioUrl(DEFAULT_VIDEO_AUDIO_URL);
     const audioUrl = requestedAudio || fallbackAudio || null;
+    console.log('[debug][video-api] start request', {
+        ownerId: req.user?.id || null,
+        categoryId,
+        transitionType,
+        fadeDuration,
+        slideDuration,
+        hasAudioUrl: !!audioUrl,
+        userAgent: req.get('user-agent') || ''
+    });
     try {
         const jobId = videoJobQueue.add(req.user.id, categoryId, {
             audioUrl,
@@ -1535,17 +1545,40 @@ app.post('/api/generate-category-video', requireOwner, express.json(), async (re
             fadeDuration,
             transitionType
         });
+        console.log('[debug][video-api] job queued', { ownerId: req.user?.id || null, categoryId, jobId });
         return res.json({ jobId });
     } catch (e) {
+        console.error('[debug][video-api] queue failed', e && e.message ? e.message : e);
         return res.status(500).json({ error: e.message });
     }
 });
 
 app.get('/api/generate-category-video/:jobId', requireOwner, async (req, res) => {
+    res.set('Cache-Control', 'no-store');
     if (!videoJobQueue) return res.status(503).json({ error: 'Video generation not configured' });
     const job = videoJobQueue.get(req.params.jobId);
-    if (!job) return res.status(404).json({ error: 'Job not found' });
-    if (job.ownerId !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    if (!job) {
+        console.warn('[debug][video-api] job not found', {
+            ownerId: req.user?.id || null,
+            jobId: req.params.jobId
+        });
+        return res.status(404).json({ error: 'Job not found' });
+    }
+    if (job.ownerId !== req.user.id) {
+        console.warn('[debug][video-api] forbidden poll', {
+            ownerId: req.user?.id || null,
+            jobOwnerId: job.ownerId,
+            jobId: req.params.jobId
+        });
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+    if (job.status === 'failed') {
+        console.warn('[debug][video-api] job failed', {
+            ownerId: req.user?.id || null,
+            jobId: job.id,
+            error: job.error || null
+        });
+    }
     return res.json({
         id: job.id,
         status: job.status,

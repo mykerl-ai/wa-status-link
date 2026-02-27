@@ -1449,6 +1449,100 @@
                 pollInterval = null;
             }
         }
+        function parseApiBody(rawText) {
+            const text = String(rawText || '');
+            if (!text.trim()) return null;
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                return null;
+            }
+        }
+        function looksLikeHtml(rawText) {
+            const text = String(rawText || '').trim().toLowerCase();
+            if (!text) return false;
+            return text.startsWith('<!doctype html') || text.startsWith('<html') || text.includes('<head') || text.includes('<body');
+        }
+        async function requestJsonWithFallback(url, options) {
+            const reqOptions = options || {};
+            try {
+                const res = await fetch(url, reqOptions);
+                const rawText = await res.text();
+                const data = parseApiBody(rawText);
+                return {
+                    ok: !!res.ok,
+                    status: Number(res.status) || 0,
+                    data: data,
+                    rawText: rawText,
+                    isHtml: looksLikeHtml(rawText),
+                    transport: 'fetch'
+                };
+            } catch (fetchErr) {
+                console.warn('[debug][video] fetch failed, trying XHR fallback', fetchErr && fetchErr.message ? fetchErr.message : fetchErr);
+                return new Promise(function(resolve, reject) {
+                    try {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open((reqOptions.method || 'GET').toUpperCase(), url, true);
+                        xhr.withCredentials = reqOptions.credentials === 'same-origin' || reqOptions.credentials === 'include';
+                        xhr.timeout = Number(reqOptions.timeoutMs) > 0 ? Number(reqOptions.timeoutMs) : 45000;
+                        const headers = reqOptions.headers && typeof reqOptions.headers === 'object' ? reqOptions.headers : null;
+                        if (headers) {
+                            Object.keys(headers).forEach(function(key) {
+                                if (headers[key] != null) xhr.setRequestHeader(key, String(headers[key]));
+                            });
+                        }
+                        xhr.onload = function() {
+                            const rawText = xhr.responseText || '';
+                            resolve({
+                                ok: xhr.status >= 200 && xhr.status < 300,
+                                status: Number(xhr.status) || 0,
+                                data: parseApiBody(rawText),
+                                rawText: rawText,
+                                isHtml: looksLikeHtml(rawText),
+                                transport: 'xhr'
+                            });
+                        };
+                        xhr.onerror = function() {
+                            reject(new Error('Video request failed (network).'));
+                        };
+                        xhr.ontimeout = function() {
+                            reject(new Error('Video request timed out.'));
+                        };
+                        xhr.send(reqOptions.body || null);
+                    } catch (xhrErr) {
+                        reject(xhrErr || fetchErr || new Error('Video request failed.'));
+                    }
+                });
+            }
+        }
+        function mapVideoRequestError(result, fallback) {
+            const status = Number(result && result.status) || 0;
+            const data = result && result.data ? result.data : null;
+            const rawText = String((result && result.rawText) || '').trim();
+            if (data && typeof data.error === 'string' && data.error.trim()) {
+                return data.error.trim();
+            }
+            if (status === 401 || status === 403) {
+                return 'Session expired. Please sign in again.';
+            }
+            if (status === 404) {
+                return 'Video job not found. Please generate again.';
+            }
+            if (status === 408 || status === 504) {
+                return 'Video generation request timed out. Please try again.';
+            }
+            if (status === 429) {
+                return 'Too many requests. Wait a moment and try again.';
+            }
+            if (status === 502 || status === 503) {
+                return 'Video service is temporarily unavailable. Please retry shortly.';
+            }
+            if (result && result.isHtml) {
+                return 'Server returned an unexpected page. Please refresh and try again.';
+            }
+            if (rawText) return rawText.slice(0, 180);
+            return fallback || 'Request failed';
+        }
         function formatDuration(seconds) {
             const n = Number(seconds);
             if (!Number.isFinite(n) || n <= 0) return '';
@@ -1969,10 +2063,17 @@
             stopPolling();
             pollInterval = setInterval(async function() {
                 try {
-                    const res = await fetch('/api/generate-category-video/' + jobId, { credentials: 'same-origin' });
-                    const data = await res.json();
-                    if (!res.ok) {
-                        setVideoStatus(data.error || 'Error', 'error');
+                    const response = await requestJsonWithFallback('/api/generate-category-video/' + encodeURIComponent(jobId), {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        timeoutMs: 20000
+                    });
+                    const data = response.data || {};
+                    if (!response.ok) {
+                        const msg = mapVideoRequestError(response, 'Error checking status');
+                        console.warn('[debug][video] poll failed', { status: response.status, transport: response.transport, message: msg });
+                        setVideoStatus(msg, 'error');
                         stopPolling();
                         setButtonBusy(false);
                         return;
@@ -1994,7 +2095,8 @@
                         setButtonBusy(false);
                     }
                 } catch (e) {
-                    setVideoStatus('Error checking status', 'error');
+                    console.error('[debug][video] poll request error', e && e.message ? e.message : e);
+                    setVideoStatus(e && e.message ? e.message : 'Error checking status', 'error');
                     stopPolling();
                     setButtonBusy(false);
                 }
@@ -2021,22 +2123,41 @@
                     fadeDuration: fadeDuration
                 };
                 if (audioUrl) payload.audioUrl = audioUrl;
-                const res = await fetch('/api/generate-category-video', {
+                console.log('[debug][video] starting generation', {
+                    categoryId: catId,
+                    transitionType: transitionType,
+                    fadeDuration: fadeDuration,
+                    hasAudioUrl: !!audioUrl
+                });
+                const response = await requestJsonWithFallback('/api/generate-category-video', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
-                    credentials: 'same-origin'
+                    credentials: 'same-origin',
+                    timeoutMs: 45000
                 });
-                const data = await res.json();
-                if (!res.ok) {
-                    setVideoStatus(data.error || 'Failed to start', 'error');
+                const data = response.data || {};
+                console.log('[debug][video] start response', {
+                    ok: response.ok,
+                    status: response.status,
+                    transport: response.transport,
+                    hasJobId: !!data.jobId
+                });
+                if (!response.ok) {
+                    setVideoStatus(mapVideoRequestError(response, 'Failed to start'), 'error');
+                    setButtonBusy(false);
+                    return;
+                }
+                if (!data.jobId) {
+                    setVideoStatus('Could not start generation. Please try again.', 'error');
                     setButtonBusy(false);
                     return;
                 }
                 setVideoStatus('Queued...');
                 pollJob(data.jobId);
             } catch (e) {
-                setVideoStatus('Request failed', 'error');
+                console.error('[debug][video] start request failed', e && e.message ? e.message : e);
+                setVideoStatus(e && e.message ? e.message : 'Request failed', 'error');
                 setButtonBusy(false);
             }
         });
@@ -2287,6 +2408,40 @@
         }
     }
 
+    function mapUploadErrorMessage(uploadResult) {
+        const status = Number(uploadResult && uploadResult.status) || 0;
+        const data = uploadResult && uploadResult.data ? uploadResult.data : null;
+        const rawText = String((uploadResult && uploadResult.rawText) || '').trim();
+        const lowerRaw = rawText.toLowerCase();
+        const isHtml = lowerRaw.startsWith('<!doctype html') || lowerRaw.startsWith('<html') || lowerRaw.includes('<head') || lowerRaw.includes('<body');
+
+        if (data && typeof data.error === 'string' && data.error.trim()) {
+            return data.error.trim();
+        }
+        if (status === 401 || status === 403) {
+            return 'Session expired. Please sign in again.';
+        }
+        if (status === 413) {
+            return 'Upload is too large. Reduce file size or upload fewer files at once.';
+        }
+        if (status === 408 || status === 504) {
+            return 'Upload timed out. Please retry with fewer or smaller files.';
+        }
+        if (status === 429) {
+            return 'Too many requests. Wait a moment and try again.';
+        }
+        if (status === 502 || status === 503) {
+            return 'Temporary server issue during upload. Please try again.';
+        }
+        if (isHtml) {
+            return 'Upload failed due to a server/network error. Please retry; if it keeps happening, upload fewer files per batch.';
+        }
+        if (rawText) {
+            return rawText.slice(0, 180);
+        }
+        return 'Upload failed';
+    }
+
     document.getElementById('bulkForm').onsubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('uploadBtn');
@@ -2354,9 +2509,7 @@
                     window.location.href = '/login?next=' + encodeURIComponent('/');
                     return;
                 }
-                const msg = (data && data.error)
-                    || (uploadResult.rawText && uploadResult.rawText.slice(0, 120))
-                    || 'Upload failed';
+                const msg = mapUploadErrorMessage(uploadResult);
                 console.error('[debug][upload] upload failed', msg);
                 throw new Error(msg);
             }
